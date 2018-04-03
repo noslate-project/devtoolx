@@ -1,0 +1,12 @@
+logs
+run
+.DS_Store
+node_modules
+.idea
+build
+npm-debug.log
+package-lock.json
+index_prod.html
+coverage
+tmp
+dispatch.js
