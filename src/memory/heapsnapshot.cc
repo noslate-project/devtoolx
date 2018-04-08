@@ -1,10 +1,8 @@
-#include "./parser.h"
-#include "./heapsnapshot.h"
+#include "parser.h"
+#include "heapsnapshot.h"
 
 using v8::Local;
 using v8::Object;
-using nlohmann::json;
-
 void GetName(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   Local<v8::String> name = Nan::New("HeapTools").ToLocalChecked();
   info.GetReturnValue().Set(name);
@@ -12,9 +10,9 @@ void GetName(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 void HeapSnapshot::Init(Local<Object> exports) {
   Local<Object> heapTools = Nan::New<Object>();
-  heapTools->Set(Nan::New("getName").ToLocalChecked(), 
-    Nan::New<v8::FunctionTemplate>(GetName)->GetFunction());
-  
+  heapTools->Set(Nan::New("getName").ToLocalChecked(),
+                 Nan::New<v8::FunctionTemplate>(GetName)->GetFunction());
+
   parser::Parser::Init(heapTools);
 
   exports->Set(Nan::New("heapTools").ToLocalChecked(), heapTools);
