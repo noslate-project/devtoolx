@@ -74,6 +74,7 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
     std::string mode_search = "search";
     if(strcmp(*mode, mode_search.c_str()) == 0) {
       parser->snapshotParser->CreateAddressMap();
+      parser->snapshotParser->BuildTotalRetainer();
     }
   }
 }

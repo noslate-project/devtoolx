@@ -46,10 +46,15 @@ public:
   int* first_edge_indexes;
   snapshot_node::Node* node_util;
   snapshot_edge::Edge* edge_util;
+
 private:
   int* GetFirstEdgeIndexes();
   // address -> node ordinal id
   AddressMap address_map_;
+  // total retainers
+  int* retaining_nodes_;
+  int* retaining_edges_;
+  int* first_retainer_index_;
 };
 }
 
