@@ -78,6 +78,45 @@ int SnapshotParser::SearchOrdinalByAddress(int address) {
 }
 
 void SnapshotParser::BuildTotalRetainer() {
-
+  retaining_nodes_ = new int[edge_count] {0};
+  retaining_edges_ = new int[edge_count] {0};
+  first_retainer_index_ = new int[node_count + 1] {0};
+  // every node's retainer count
+  for(int to_node_field_index = edge_to_node_offset, l = edge_count; to_node_field_index < l; to_node_field_index += edge_field_length) {
+    int to_node_index = edges[to_node_field_index];
+    if(to_node_index % node_field_length != 0) {
+      Nan::ThrowTypeError(Nan::New<v8::String>("node index id is wrong!").ToLocalChecked());
+      return;
+    }
+    int ordinal_id = to_node_index / node_field_length;
+    first_retainer_index_[ordinal_id] += 1;
+  }
+  // set first retainer index
+  for(int i = 0, first_unused_retainer_slot = 0; i < node_count; i++) {
+    int retainers_count = first_retainer_index_[i];
+    first_retainer_index_[i] = first_unused_retainer_slot;
+    retaining_nodes_[first_unused_retainer_slot] = retainers_count;
+    first_unused_retainer_slot += retainers_count;
+  }
+  // for (index ~ index + 1)
+  first_retainer_index_[node_count] = edge_count;
+  // set retaining slot
+  int next_node_first_edge_index = first_edge_indexes[0];
+  for(int src_node_ordinal = 0; src_node_ordinal < node_count; src_node_ordinal++) {
+    int first_edge_index = next_node_first_edge_index;
+    next_node_first_edge_index = first_edge_indexes[src_node_ordinal + 1];
+    for(int edge_index = first_edge_index; edge_index < next_node_first_edge_index; edge_index += edge_field_length) {
+      int to_node_index = edges[edge_index + edge_to_node_offset];
+      if(to_node_index % node_field_length != 0) {
+        Nan::ThrowTypeError(Nan::New<v8::String>("to_node id is wrong!").ToLocalChecked());
+        return;
+      }
+      int first_retainer_slot_index = first_retainer_index_[to_node_index / node_field_length];
+      int next_unused_retainer_slot_index = first_retainer_slot_index + (--retaining_nodes_[first_retainer_slot_index]);
+      // save retainer & edge
+      retaining_nodes_[next_unused_retainer_slot_index] = src_node_ordinal;
+      retaining_edges_[next_unused_retainer_slot_index] = edge_index;
+    }
+  }
 }
 }
