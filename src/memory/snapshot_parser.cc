@@ -45,15 +45,39 @@ int SnapshotParser::IndexOf(json array, std::string target) {
 }
 
 int* SnapshotParser::GetFirstEdgeIndexes() {
-  int* first_edge_indexes = new int[this->node_count];
-  for(int node_ordinal = 0, edge_index = 0; node_ordinal < this->node_count; node_ordinal++) {
+  int* first_edge_indexes = new int[node_count];
+  for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
-    int offset = static_cast<int>(this->nodes[node_ordinal * this->node_field_length + this->node_edge_count_offset]) * this->edge_field_length;
-    for(int i = edge_index; i < offset; i += this->edge_field_length) {
-      this->edge_from_node[i / this->edge_field_length] = node_ordinal;
+    int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
+    for(int i = edge_index; i < offset; i += edge_field_length) {
+      edge_from_node[i / edge_field_length] = node_ordinal;
     }
     edge_index += offset;
   }
   return first_edge_indexes;
+}
+
+void SnapshotParser::CreateAddressMap() {
+  for(int ordinal = 0; ordinal < node_count; ordinal++) {
+    int address = node_util->GetAddress(ordinal, false);
+    address_map_.insert(AddressMap::value_type(address, ordinal));
+  }
+}
+
+void SnapshotParser::ClearAddressMap() {
+  address_map_.clear();
+}
+
+int SnapshotParser::SearchOrdinalByAddress(int address) {
+  int count = address_map_.count(address);
+  if(count == 0) {
+    return -1;
+  }
+  int ordinal = address_map_.at(address);
+  return ordinal;
+}
+
+void SnapshotParser::BuildTotalRetainer() {
+
 }
 }

@@ -1,7 +1,9 @@
+#include<nan.h>
 #include <iostream>
-#include "../library/json.hpp"
+#include <unordered_map>
 #include "node.h"
 #include "edge.h"
+#include "../library/json.hpp"
 
 #ifndef __SNAPSHOT_PARSER_H_
 #define __SNAPSHOT_PARSER_H_
@@ -9,10 +11,16 @@
 namespace snapshot_parser {
 using nlohmann::json;
 
+typedef std::unordered_map<int, int> AddressMap;
+
 class SnapshotParser {
 public:
   explicit SnapshotParser(json profile);
   ~SnapshotParser();
+  void CreateAddressMap();
+  void ClearAddressMap();
+  int SearchOrdinalByAddress(int address);
+  void BuildTotalRetainer();
   static int IndexOf(json array, std::string target);
   json nodes;
   json edges;
@@ -40,6 +48,8 @@ public:
   snapshot_edge::Edge* edge_util;
 private:
   int* GetFirstEdgeIndexes();
+  // address -> node ordinal id
+  AddressMap address_map_;
 };
 }
 
