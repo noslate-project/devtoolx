@@ -119,4 +119,24 @@ void SnapshotParser::BuildTotalRetainer() {
     }
   }
 }
+
+int SnapshotParser::GetRetainersCount(int id) {
+  int first_retainer_index = first_retainer_index_[id];
+  int next_retainer_index = first_retainer_index_[id + 1];
+  return next_retainer_index - first_retainer_index;
+}
+
+int* SnapshotParser::GetRetainers(int id) {
+  int first_retainer_index = first_retainer_index_[id];
+  int next_retainer_index = first_retainer_index_[id + 1];
+  int length = next_retainer_index - first_retainer_index;
+  int* retainers = new int[length * 2];
+  for(int i = first_retainer_index; i < next_retainer_index; i++) {
+    int node = retaining_nodes_[i];
+    int edge = retaining_edges_[i];
+    retainers[(i - first_retainer_index) * 2] = node;
+    retainers[(i - first_retainer_index) * 2 + 1] = edge;
+  }
+  return retainers;
+}
 }

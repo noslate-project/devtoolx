@@ -98,11 +98,26 @@ Local<Object> Parser::GetNodeById_(int id) {
     edge->Set(Nan::New<String>("to_node").ToLocalChecked(), Nan::New<Number>(to_node));
     edges->Set(i, edge);
   }
+  int* retainers_local = snapshotParser->GetRetainers(id);
+  int retainers_length = snapshotParser->GetRetainersCount(id);
+  Local<Array> retainers = Nan::New<Array>(retainers_length);
+  for(int i = 0; i < retainers_length; i++) {
+    int node = retainers_local[i * 2];
+    int edge = retainers_local[i * 2 + 1];
+    Local<Object> retainer = Nan::New<Object>();
+    std::string edge_type = snapshotParser->edge_util->GetType(edge, true);
+    std::string name_or_index = snapshotParser->edge_util->GetNameOrIndex(edge, true);
+    retainer->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
+    retainer->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
+    retainer->Set(Nan::New<String>("from_node").ToLocalChecked(), Nan::New<Number>(node));
+    retainers->Set(i, retainer);
+  }
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
   node->Set(Nan::New<String>("edges").ToLocalChecked(), edges);
+  node->Set(Nan::New<String>("retainers").ToLocalChecked(), retainers);
   return node;
 }
 

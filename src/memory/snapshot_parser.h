@@ -21,6 +21,8 @@ public:
   void ClearAddressMap();
   int SearchOrdinalByAddress(int address);
   void BuildTotalRetainer();
+  int GetRetainersCount(int id);
+  int* GetRetainers(int id);
   static int IndexOf(json array, std::string target);
   json nodes;
   json edges;
