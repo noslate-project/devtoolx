@@ -112,6 +112,7 @@ Local<Object> Parser::GetNodeById_(int id) {
     retainer->Set(Nan::New<String>("from_node").ToLocalChecked(), Nan::New<Number>(node));
     retainers->Set(i, retainer);
   }
+  node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
