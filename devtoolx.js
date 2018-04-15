@@ -3,7 +3,11 @@ const devtoolx = require('bindings')('devtoolx');
 const heapTools = devtoolx.heapTools;
 const V8Parser = heapTools.V8Parser;
 
+exports = module.exports = devtoolx;
 
+exports.web = require('./worker/web');
+
+// after is test code, will be removed
 function getName() {
   const path = require('path');
   let parser = new V8Parser(path.join(__dirname, './test/resource/test.heapsnapshot'));
@@ -21,5 +25,7 @@ function getName() {
   // console.log(snap.nodes[6], snap.snapshot.meta.node_types[0][9]);
 }
 
-getName();
+// getName();
 // setInterval(getName, 1);
+
+exports.web().listen(3001);

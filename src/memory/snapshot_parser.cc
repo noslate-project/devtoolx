@@ -82,7 +82,7 @@ void SnapshotParser::BuildTotalRetainer() {
   retaining_edges_ = new int[edge_count] {0};
   first_retainer_index_ = new int[node_count + 1] {0};
   // every node's retainer count
-  for(int to_node_field_index = edge_to_node_offset, l = edge_count; to_node_field_index < l; to_node_field_index += edge_field_length) {
+  for(int to_node_field_index = edge_to_node_offset, l = edges.size(); to_node_field_index < l; to_node_field_index += edge_field_length) {
     int to_node_index = edges[to_node_field_index];
     if(to_node_index % node_field_length != 0) {
       Nan::ThrowTypeError(Nan::New<v8::String>("node index id is wrong!").ToLocalChecked());
@@ -118,5 +118,25 @@ void SnapshotParser::BuildTotalRetainer() {
       retaining_edges_[next_unused_retainer_slot_index] = edge_index;
     }
   }
+}
+
+int SnapshotParser::GetRetainersCount(int id) {
+  int first_retainer_index = first_retainer_index_[id];
+  int next_retainer_index = first_retainer_index_[id + 1];
+  return next_retainer_index - first_retainer_index;
+}
+
+int* SnapshotParser::GetRetainers(int id) {
+  int first_retainer_index = first_retainer_index_[id];
+  int next_retainer_index = first_retainer_index_[id + 1];
+  int length = next_retainer_index - first_retainer_index;
+  int* retainers = new int[length * 2];
+  for(int i = first_retainer_index; i < next_retainer_index; i++) {
+    int node = retaining_nodes_[i];
+    int edge = retaining_edges_[i];
+    retainers[(i - first_retainer_index) * 2] = node;
+    retainers[(i - first_retainer_index) * 2 + 1] = edge;
+  }
+  return retainers;
 }
 }

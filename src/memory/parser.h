@@ -27,6 +27,7 @@ private:
   static void GetNodeId(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void GetNodeByOrdinalId(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void GetNodeByAddress(const Nan::FunctionCallbackInfo<v8::Value>& info);
+  static void GetNodeIdByAddress(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static Nan::Persistent<v8::Function> constructor;
   // snapshot info
   int filelength_;
