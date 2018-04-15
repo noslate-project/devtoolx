@@ -31,6 +31,7 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getNodeId", GetNodeId);
   Nan::SetPrototypeMethod(tpl, "getNodeByOrdinalId", GetNodeByOrdinalId);
   Nan::SetPrototypeMethod(tpl, "getNodeByAddress", GetNodeByAddress);
+  Nan::SetPrototypeMethod(tpl, "getNodeIdByAddress", GetNodeIdByAddress);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
@@ -165,6 +166,28 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
   }
   Local<Object> node = parser->GetNodeById_(id);
   info.GetReturnValue().Set(node);
+}
+
+void Parser::GetNodeIdByAddress(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+  if(!info[0]->IsString()) {
+    Nan::ThrowTypeError(Nan::New<String>("argument must be string!").ToLocalChecked());
+    return;
+  }
+  Nan::Utf8String addr(info[0]->ToString());
+  char start = '@';
+  if(strncmp(*addr, &start, 1) != 0) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 must be startwith \"@\"!").ToLocalChecked());
+    return;
+  }
+  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  int id = parser->snapshotParser->SearchOrdinalByAddress(atoi((*addr) + 1));
+  if(id == -1) {
+    std::string addrs = *addr;
+    std::string error = "address \"" + addrs + "\" is wrong!";
+    Nan::ThrowTypeError(Nan::New<v8::String>(error).ToLocalChecked());
+    return;
+  }
+  info.GetReturnValue().Set(Nan::New<Number>(id));
 }
 
 void Parser::GetFileName(const Nan::FunctionCallbackInfo<Value>& info) {

@@ -25,7 +25,7 @@ function getName() {
   // console.log(snap.nodes[6], snap.snapshot.meta.node_types[0][9]);
 }
 
-getName();
+// getName();
 // setInterval(getName, 1);
 
 exports.web().listen(3001);

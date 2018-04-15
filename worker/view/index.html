@@ -5,83 +5,78 @@
     <meta charset="UTF-8">
     <!-- import CSS -->
     <link rel="stylesheet" href="/css/element-ui.css">
+    <style>
+        .content {
+            font-family: 'Source Sans Pro', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .content strong {
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .content small {
+            font-size: 10px;
+            font-weight: 300;
+        }
+
+        .disabled {
+            color: #b3b3b3
+        }
+    </style>
 </head>
 
 <body>
     <div id="app">
-        <el-input style="width:250px" placeholder="please input node address" prefix-icon="el-icon-search" v-model="address">
+        <el-input style="width:250px;margin-left:20px;margin-top:20px" placeholder="please input node address" prefix-icon="el-icon-search"
+            v-model="address" @focus="cleanInput">
         </el-input>
-        <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchAddress"></el-button>
-        <el-tree style="margin-top:20px" :load="loadNodeEdge" :props="props" lazy></el-tree>
+        <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
+        <p class="content" style="margin-left:20px;height:5px">Edges:</p>
+        <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData"></tree-edges>
+        <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
+        <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData"></tree-retainers>
     </div>
 </body>
+
+<script type="text/template" id="tree">
+    <div>
+        <el-tree style="margin-top:20px" :load="loadNodeEdge" :props="props" lazy>
+            <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
+            <span v-if="!node.data.fromEdge && !node.data.exists">
+                <strong>{{ node.data.name }}</strong>
+                <small>{{ node.data.additional }}</small>
+            </span>
+            <span v-if="node.data.fromEdge && !node.data.exists">
+                <strong>.{{ node.data.fromEdge }}</strong>
+                <small v-if="type === 'edges'">=></small>
+                <small v-if="type === 'retainers'"><=</small>
+                <strong>{{ node.data.name }}</strong>
+                <small>{{ node.data.additional }}</small>
+            </span>
+            <span v-if="!node.data.fromEdge && node.data.exists" class="disabled">
+                <strong>{{ node.data.name }}</strong>
+                <small>{{ node.data.additional }}</small>
+            </span>
+            <span v-if="node.data.fromEdge && node.data.exists" class="disabled">
+                <strong>.{{ node.data.fromEdge }}</strong>
+                <small v-if="type === 'edges'">=></small>
+                <small v-if="type === 'retainers'"><=</small>
+                <strong>{{ node.data.name }}</strong>
+                <small>{{ node.data.additional }}</small>
+            </span>
+            </span>
+        </el-tree>
+    </div>
+</script>
+
 <!-- import Vue before Element -->
 <script src="/js/vue.js"></script>
 <!-- import JavaScript -->
 <script src="/js/element-ui.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<script>
-    new Vue({
-        el: '#app',
-        data: function () {
-            return {
-                props: {
-                    label: 'name'
-                },
-                address: '',
-                root: { name: 'root', id: 0 }
-            }
-        },
-        methods: {
-            loadNodeEdge(node, resolve) {
-                var vm = this;
-                if (node.level === 0) {
-                    return resolve([this.root]);
-                }
-                var data = node.data;
-                if (node.level > 0) {
-                    if (data.edges) {
-                        var task = data.edges.map(e => {
-                            return axios.get(`/ordinal/${e.to_node}`).then(res => res.data)
-                        });
-                        Promise.all(task).then(list => {
-                            var result = list.map(r => {
-                                if (r.ok) {
-                                    return {
-                                        name: r.data.name,
-                                        id: r.data.id,
-                                        edges: r.data.edges
-                                    }
-                                }
-                            }).filter(r => r);
-                            resolve(result);
-                        }).catch(err => vm.$message.error(err));
-                    }
-                }
-            },
-            searchAddress() {
-                if (!this.address) return;
-                if (this.address[0] !== '@') {
-                    this.$message.error('node address must starts with \'@\'!');
-                }
-                var vm = this;
-                axios.get(`/address/${vm.address}`)
-                    .then(res => {
-                        let data = res.data;
-                        if (data.ok) {
-                            data = res.data && res.data.data;
-                            vm.root.name = data.name;
-                            vm.root.id = data.id;
-                            vm.root.edges = data.edges;
-                        } else {
-                            vm.$message.error(data.message);
-                        }
-                    })
-                    .catch(err => vm.$message.error(err));
-            }
-        }
-    })
-
-</script>
+<script src="/js/component/tree_edges.js"></script>
+<script src="/js/component/tree_retainers.js"></script>
+<script src="/js/index.js"></script>
 
 </html>
