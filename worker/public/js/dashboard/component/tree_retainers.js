@@ -1,8 +1,8 @@
 (function () {
-  var TreeEdges = {
-    template: '#tree',
+  var TreeRetainers = {
+    template: '#tree-template',
     data() {
-      return { props: { label: 'name', isLeaf: 'exists' }, node: {}, type: 'edges' }
+      return { props: { label: 'name', isLeaf: 'exists' }, node: {}, type: 'retainers' }
     },
     props: ['rootid', 'nodeData'],
     methods: {
@@ -16,13 +16,13 @@
               let data = res.data;
               if (data.ok) {
                 data = res.data && res.data.data;
-                var name = `${data.name}::${data.address}`;
-                vm.node.exists[name] = true;
+                vm.node.exists[data.address] = true;
                 resolve([{
-                  name,
+                  name: data.name,
+                  address: data.address,
                   fromEdge: '',
-                  additional: `(type: ${data.type}, size: ${vm.formatSize(data.self_size)})`,
-                  edges: data.edges
+                  additional: `(type: ${data.type}, self_size: ${vm.formatSize(data.self_size)})`,
+                  retainers: data.retainers
                 }]);
               } else {
                 vm.$message.error(data.message);
@@ -34,24 +34,26 @@
         node.root = vm.node;
         var data = node.data;
         if (node.level > 0) {
-          if (data.edges) {
-            var task = data.edges.map(e => {
-              return axios.get(`/ordinal/${e.to_node}`).then(res => res.data)
+          if (data.retainers) {
+            var task = data.retainers.map(e => {
+              return axios.get(`/ordinal/${e.from_node}`).then(res => res.data)
             });
             Promise.all(task).then((list) => {
               var result = list.map((r, i) => {
                 if (r.ok) {
-                  var name = `${r.data.name}::${r.data.address}`;
                   var result = {
-                    name,
-                    fromEdge: `${data.edges[i].name_or_index}`,
-                    additional: `(type: ${r.data.type}, size: ${vm.formatSize(r.data.self_size)})`,
-                    edges: r.data.edges
+                    name: r.data.name,
+                    address: r.data.address,
+                    alive: data.retainers[i].type === 'property' || data.retainers[i].type === 'element' || data.retainers[i].type === 'shortcut',
+                    fromEdge: `${data.retainers[i].name_or_index}`,
+                    additional: `(type: ${r.data.type}, self_size: ${vm.formatSize(r.data.self_size)})`,
+                    retainers: r.data.retainers
                   };
-                  if (node.root.exists[name]) {
+                  if (node.root.exists[r.data.address]) {
                     result.exists = true;
+                    result.class = 'disabled';
                   } else {
-                    node.root.exists[name] = true;
+                    node.root.exists[r.data.address] = true;
                   }
                   return result;
                 }
@@ -84,12 +86,14 @@
         root.isLeaf = false;
         root.loaded = false;
         root.data.name = this.nodeData.name;
-        root.data.edges = this.nodeData.edges;
+        root.data.address = this.nodeData.address;
+        root.data.retainers = this.nodeData.retainers;
+        root.data.additional = `(type: ${this.nodeData.type}, self_size: ${this.nodeData.self_size})`;
         this.node.exists = {};
-        this.node.exists[this.nodeData.name] = true;
+        this.node.exists[this.nodeData.address] = true;
       }
     }
   };
   if (typeof Devtoolx === 'undefined') window.Devtoolx = {};
-  Devtoolx.TreeEdges = TreeEdges;
+  Devtoolx.TreeRetainers = TreeRetainers;
 })();

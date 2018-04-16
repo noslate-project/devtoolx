@@ -1,0 +1,41 @@
+.content {
+  font-family: Menlo;
+}
+
+.content strong {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.content small {
+  font-size: 10px;
+  font-weight: 300;
+}
+
+.disabled {
+  opacity: 0.5
+}
+
+.alive {
+  color: rgb(136, 19, 145)
+}
+
+.node-name {
+  color: rgb(48, 57, 66)
+}
+
+.address {
+  color: grey
+}
+
+.additional {
+  color: grey
+}
+
+.more-button{
+  font-family: Menlo;
+  padding: 3px 8px;
+  color: #673ab7;
+  margin-top:5px;
+  margin-left: -15px;
+}

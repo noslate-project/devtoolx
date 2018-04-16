@@ -9,8 +9,10 @@ const heapTools = devtoolx.heapTools;
 const V8Parser = heapTools.V8Parser;
 
 function createServer() {
+  console.time('parse');
   let parser = new V8Parser(path.join(__dirname, '../test/resource/test.heapsnapshot'));
   parser.parse({ mode: 'search' });
+  console.timeEnd('parse');
 
   let app = express();
   app.set('views', path.join(__dirname, './view'));
@@ -30,7 +32,9 @@ function createServer() {
 
   app.get('/address/:address', (req, res) => {
     try {
-      let node = parser.getNodeByAddress(req.params.address);
+      let current = !isNaN(req.query.current) && parseInt(req.query.current);
+      let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
+      let node = parser.getNodeByAddress(req.params.address, current, limit);
       res.json({ ok: true, data: node });
     } catch (e) {
       res.json({ ok: false, message: e.message });
@@ -39,7 +43,9 @@ function createServer() {
 
   app.get('/ordinal/:ordinal', (req, res) => {
     try {
-      let node = parser.getNodeByOrdinalId(parseInt(req.params.ordinal));
+      let current = !isNaN(req.query.current) && parseInt(req.query.current);
+      let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
+      let node = parser.getNodeByOrdinalId(parseInt(req.params.ordinal), current, limit);
       res.json({ ok: true, data: node });
     } catch (e) {
       res.json({ ok: false, message: e.message });

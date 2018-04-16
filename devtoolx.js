@@ -15,8 +15,8 @@ function getName() {
   console.time('json');
   parser.parse({ mode: 'search' });
   // console.log(parser.getNodeId(12));
-  // let node = parser.getNodeByOrdinalId(1);
-  let node = parser.getNodeByAddress("@1");
+  // let node = parser.getNodeByOrdinalId(1, 1, 1);
+  let node = parser.getNodeByAddress("@1", 0, 5);
   // node.edges.forEach(e => e.to_node = parser.getNodeByOrdinalId(e.to_node).name);
   console.log(node);
   // console.log(parser.getNodeByOrdinalId(9999));
@@ -28,4 +28,5 @@ function getName() {
 // getName();
 // setInterval(getName, 1);
 
+console.log(process.pid);
 exports.web().listen(3001);
