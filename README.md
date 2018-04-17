@@ -20,6 +20,7 @@ devtoolx -s <heapsnapshot file> [-p <port>]
 
 example:
 
+![devtoox.gif](https://raw.githubusercontent.com/hyj1991/devtoolx/master/assets/devtoolx.gif)
 
 
 ### Help
