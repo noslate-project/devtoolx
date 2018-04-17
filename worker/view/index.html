@@ -16,20 +16,19 @@
         <p class="content" style="margin-left:20px;height:5px">Edges:</p>
         <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"></tree-edges>
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
-        <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode"></tree-retainers>
+        <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"></tree-retainers>
     </div>
 </body>
 
 <script type="text/template" id="tree-template">
     <div>
-        <el-tree style="margin-top:20px" :load="loadNodeEdge" :props="props" node-key="key" lazy>
+        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" lazy>
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
-                <strong v-if="node.data.alive" class="alive">{{ node.data.fromEdge }}</strong>
-                <strong v-if="!node.data.alive">{{ node.data.fromEdge }}</strong>
-                <small v-if="type === 'edges'">::</small>
-                <strong v-if="type === 'retainers'">in</strong>
+                <strong :class="node.data.edgeClass">{{ node.data.fromEdge }}</strong>
+                <small v-if="type === 'edges'" class="address">::</small>
+                <strong v-if="type === 'retainers'" class="address">in</strong>
             </span>
             <span :class="node.data.class">
                 <strong class="node-name">{{ node.data.name }}</strong>
@@ -38,7 +37,7 @@
             </span>
             </span>
             <span v-if="node.data.loadMore">
-                <td><el-button plain size="small" class="more-button" @click="loadMoreEdges(node, data)">more</el-button></td>
+                <td><el-button plain size="small" class="more-button" @click="loadMore(node, data)">more</el-button></td>
             </span>
             </span>
         </el-tree>

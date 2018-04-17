@@ -195,6 +195,12 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
 		return;
 	}
 	long id = parser->snapshotParser->SearchOrdinalByAddress(atol((*addr) + 1));
+	if(id == -1) {
+		std::string addrs = *addr;
+		std::string error = "address \"" + addrs + "\" is wrong!";
+		Nan::ThrowTypeError(Nan::New<String>(error).ToLocalChecked());
+		return;
+	}
 	int current = 0;
 	if(info[1]->IsNumber()) {
 		current = static_cast<int>(info[1]->ToInteger()->Value());
@@ -202,12 +208,6 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
 	int limit = parser->snapshotParser->node_util->GetEdgeCount(id, false);
 	if(info[2]->IsNumber()) {
 		limit = static_cast<int>(info[2]->ToInteger()->Value());
-	}
-	if(id == -1) {
-		std::string addrs = *addr;
-		std::string error = "address \"" + addrs + "\" is wrong!";
-		Nan::ThrowTypeError(Nan::New<String>(error).ToLocalChecked());
-		return;
 	}
 	Local<Object> node = parser->GetNodeById_(id, current, limit);
 	info.GetReturnValue().Set(node);

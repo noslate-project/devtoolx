@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const util = require('../util');
+const argv = process.argv.slice(2);
+
+switch (argv[0]) {
+  case '-v':
+  case '--version':
+  case 'version':
+    console.log(require('../package.json').version);
+    process.exit(0);
+    break;
+  case '-h':
+  case '--help':
+  case 'help':
+    console.log(util.helpText);
+    process.exit(0);
+    break;
+  case '-s':
+  case '--snapshot':
+    let file = '';
+    if (!argv[1]) {
+      console.log(util.logger.errorConsole(`Error: need heapsnapshot filename`));
+      process.exit(0);
+      break;
+    }
+    file = path.resolve(argv[1]);
+    if (!fs.existsSync(file)) {
+      console.log(util.logger.errorConsole(`Error: no such file or directory, fs.existsSync('${file}')`));
+      process.exit(0);
+      break;
+    }
+    let port = 3000;
+    if (argv[2] === '-p') {
+      isNaN(argv[3]) && console.log(util.logger.warnConsole(`Warn: port is not a number, using default port 3000`));
+      !isNaN(argv[3]) && (port = argv[3]);
+    }
+    let start = Date.now();
+    require('../').snapshot(file).listen(port, () => {
+      console.log(util.logger.infoConsole2(`file <${path.basename(file)}> analysis completed, cost ${util.formatTime(Date.now() - start)},`));
+      console.log(util.logger.infoConsole2(`open http://localhost:${port} to get more details`));
+    });
+    break;
+  default:
+    console.log(util.helpText);
+    process.exit(0);
+    break;
+
+}

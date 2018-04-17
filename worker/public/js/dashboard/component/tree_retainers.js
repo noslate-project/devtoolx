@@ -4,78 +4,84 @@
     data() {
       return { props: { label: 'name', isLeaf: 'exists' }, node: {}, type: 'retainers' }
     },
-    props: ['rootid', 'nodeData'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize'],
     methods: {
-      loadNodeEdge(node, resolve) {
+      formatNode(data, retainer, raw) {
+        raw = raw || {};
+        raw.id = data.id;
+        raw.key = `${Math.random().toString(36).substr(2)}`;
+        raw.name = data.name;
+        raw.address = data.address;
+        raw.additional = `(type: ${data.type}, self_size: ${this.formatSize(data.self_size)})`;
+        raw.retainers = data.retainers;
+        raw.retainersEnd = data.retainers_end;
+        raw.retainersCurrent = data.retainers_current;
+        if (!retainer) {
+          raw.expandPaths = [data.address];
+        }
+        if (retainer) {
+          if (retainer.type === 'property' || retainer.type === 'element' || retainer.type === 'shortcut') {
+            raw.edgeClass = 'property';
+          }
+          if (retainer.type === 'context') {
+            raw.edgeClass = 'context';
+          }
+          raw.fromEdge = `${retainer.name_or_index}`
+        }
+        return raw;
+      },
+      formatPaths(parent, child, address) {
+        child.expandPaths = parent.expandPaths.concat([address]);
+        if (~parent.expandPaths.indexOf(address)) {
+          child.exists = true;
+          child.class = 'disabled';
+        }
+      },
+      loadNode(node, resolve) {
         var vm = this;
         if (node.level === 0) {
           vm.node = node;
-          if (!vm.node.exists) vm.node.exists = {};
-          axios.get(`/ordinal/${vm.rootid}`)
-            .then(res => {
-              let data = res.data;
-              if (data.ok) {
-                data = res.data && res.data.data;
-                vm.node.exists[data.address] = true;
-                resolve([{
-                  name: data.name,
-                  address: data.address,
-                  fromEdge: '',
-                  additional: `(type: ${data.type}, self_size: ${vm.formatSize(data.self_size)})`,
-                  retainers: data.retainers
-                }]);
-              } else {
-                vm.$message.error(data.message);
-              }
-            })
+          vm.getNode(`/ordinal/${vm.rootid}?current=0&limit=${Devtoolx.limit}`)
+            .then(data => resolve([vm.formatNode(data)]))
             .catch(err => vm.$message.error(err));
           return;
         }
-        node.root = vm.node;
         var data = node.data;
         if (node.level > 0) {
           if (data.retainers) {
-            var task = data.retainers.map(e => {
-              return axios.get(`/ordinal/${e.from_node}`).then(res => res.data)
-            });
-            Promise.all(task).then((list) => {
+            Promise.all(data.retainers.map(r => vm.getNode(`/ordinal/${r.from_node}/?current=0&limit=${Devtoolx.limit}`))).then((list) => {
               var result = list.map((r, i) => {
-                if (r.ok) {
-                  var result = {
-                    name: r.data.name,
-                    address: r.data.address,
-                    alive: data.retainers[i].type === 'property' || data.retainers[i].type === 'element' || data.retainers[i].type === 'shortcut',
-                    fromEdge: `${data.retainers[i].name_or_index}`,
-                    additional: `(type: ${r.data.type}, self_size: ${vm.formatSize(r.data.self_size)})`,
-                    retainers: r.data.retainers
-                  };
-                  if (node.root.exists[r.data.address]) {
-                    result.exists = true;
-                    result.class = 'disabled';
-                  } else {
-                    node.root.exists[r.data.address] = true;
-                  }
-                  return result;
-                }
+                var result = vm.formatNode(r, data.retainers[i]);
+                vm.formatPaths(data, result, r.address);
+                return result;
               }).filter(r => r);
+              if (!data.retainersEnd) {
+                result.push({ id: data.id, loadMore: true, retainersCurrent: data.retainersCurrent, exists: true });
+              }
               resolve(result);
             }).catch(err => vm.$message.error(err));
           }
         }
       },
-      formatSize(size) {
-        let str = '';
-        if (size / 1024 < 1) {
-          str = `${(size).toFixed(2)} Bytes`;
-        } else if (size / 1024 / 1024 < 1) {
-          str = `${(size / 1024).toFixed(2)} KB`;
-        } else if (size / 1024 / 1024 / 1024 < 1) {
-          str = `${(size / 1024 / 1024).toFixed(2)} MB`;
-        } else {
-          str = `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
-        }
-
-        return str;
+      loadMore(node, rawdata) {
+        var vm = this;
+        var p = null;
+        vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.retainersCurrent}&limit=${Devtoolx.limit}`)
+          .then(parent => {
+            p = parent;
+            return Promise.all(parent.retainers.map(r => vm.getNode(`/ordinal/${r.from_node}/?current=0&limit=${Devtoolx.limit}`)));
+          }).then(list => {
+            list.forEach((r, i) => {
+              var data = vm.formatNode(r, p.retainers[i]);
+              vm.formatPaths(node.parent.data, data, r.address);
+              node.parent.insertBefore({ data }, node);
+            });
+            if (p.retainers_end) {
+              node.parent.childNodes.pop();
+            } else {
+              rawdata.retainersCurrent = p.retainers_current;
+            }
+          }).catch(err => vm.$message.error(err));
       }
     },
     watch: {
@@ -85,12 +91,7 @@
         root.expanded = false;
         root.isLeaf = false;
         root.loaded = false;
-        root.data.name = this.nodeData.name;
-        root.data.address = this.nodeData.address;
-        root.data.retainers = this.nodeData.retainers;
-        root.data.additional = `(type: ${this.nodeData.type}, self_size: ${this.nodeData.self_size})`;
-        this.node.exists = {};
-        this.node.exists[this.nodeData.address] = true;
+        this.formatNode(this.nodeData, null, root.data);
       }
     }
   };

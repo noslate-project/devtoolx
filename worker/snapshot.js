@@ -8,12 +8,9 @@ const devtoolx = require('..');
 const heapTools = devtoolx.heapTools;
 const V8Parser = heapTools.V8Parser;
 
-function createServer() {
-  console.time('parse');
-  let parser = new V8Parser(path.join(__dirname, '../test/resource/test.heapsnapshot'));
+function createServer(snapshot) {
+  let parser = new V8Parser(snapshot);
   parser.parse({ mode: 'search' });
-  console.timeEnd('parse');
-
   let app = express();
   app.set('views', path.join(__dirname, './view'));
   app.engine('.html', require('ejs').renderFile);

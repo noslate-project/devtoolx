@@ -1,11 +1,21 @@
 {
   "name": "devtoolx",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "dev tools box",
   "main": "devtoolx.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "devtoolx": "bin/devtoolx"
   },
+  "files": [
+    "bin",
+    "src",
+    "worker",
+    "binding.gyp",
+    "devtoolx.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hyj1991/devtoolx.git"

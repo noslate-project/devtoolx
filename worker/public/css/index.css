@@ -16,8 +16,12 @@
   opacity: 0.5
 }
 
-.alive {
+.property {
   color: rgb(136, 19, 145)
+}
+
+.context {
+  color: rgb(28, 0, 207)
 }
 
 .node-name {

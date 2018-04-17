@@ -48,8 +48,10 @@ std::string Edge::GetNameOrIndex(long id, bool source) {
 	}
 	int type = static_cast<int>(parser_->edges[edge_source_index + parser_->edge_type_offset]);
 	long name_or_index = static_cast<long>(parser_->edges[edge_source_index + parser_->edge_name_or_index_offset]);
-	if(type == KELEMENT || type == KHIDDEN) {
+	if(type == KELEMENT) {
 		return "[" + std::to_string(name_or_index) + "]";
+	} else if(type == KHIDDEN) {
+		return std::to_string(name_or_index);
 	} else {
 		return parser_->strings[name_or_index];
 	};

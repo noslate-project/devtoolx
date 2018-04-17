@@ -1,6 +1,33 @@
 # DevTools X
 
-JS 开发者工具箱
+JavaScript Developer Toolbox
+
+* Aid in the analysis of memory
+
+## Installation
+
+```bash
+npm install devtoolx -g
+```
+
+## Usage
+
+### Search node by address
+
+```bash
+devtoolx -s <heapsnapshot file> [-p <port>]
+```
+
+example:
+
+
+
+### Help
+
+```bash
+devtoolx -h
+devtoolx --help
+```
 
 ## License
 
