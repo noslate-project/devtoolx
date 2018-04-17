@@ -1,6 +1,6 @@
 {
   "name": "devtoolx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "dev tools box",
   "main": "devtoolx.js",
   "bin": {
@@ -13,7 +13,8 @@
     "binding.gyp",
     "devtoolx.js",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "util.js"
   ],
   "scripts": {},
   "repository": {
