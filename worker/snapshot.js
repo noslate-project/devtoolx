@@ -40,9 +40,11 @@ function createServer(snapshot) {
 
   app.get('/ordinal/:ordinal', (req, res) => {
     try {
+      let ids = req.params.ordinal.split(',').map(id => parseInt(id));
       let current = !isNaN(req.query.current) && parseInt(req.query.current);
       let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
-      let node = parser.getNodeByOrdinalId(parseInt(req.params.ordinal), current, limit);
+      let type = req.query.type;
+      let node = parser.getNodeByOrdinalId(ids, current, limit, { type });
       res.json({ ok: true, data: node });
     } catch (e) {
       res.json({ ok: false, message: e.message });

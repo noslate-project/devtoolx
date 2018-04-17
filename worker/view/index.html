@@ -37,7 +37,11 @@
             </span>
             </span>
             <span v-if="node.data.loadMore">
-                <td><el-button plain size="small" class="more-button" @click="loadMore(node, data)">more</el-button></td>
+                <td>
+                    <el-button plain size="small" class="more-button" @click="loadMore(node, data)" :loading="loadMoreStatus">
+                        + (left {{ node.data.edgesLeft || node.data.retainersLeft }})
+                    </el-button>
+                </td>
             </span>
             </span>
         </el-tree>

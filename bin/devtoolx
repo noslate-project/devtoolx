@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const util = require('../util');
+const exec = require('child_process').exec;
 const argv = process.argv.slice(2);
 
 switch (argv[0]) {
@@ -32,15 +33,22 @@ switch (argv[0]) {
       process.exit(0);
       break;
     }
+    let stat = fs.statSync(file);
     let port = 3000;
     if (argv[2] === '-p') {
       isNaN(argv[3]) && console.log(util.logger.warnConsole(`Warn: port is not a number, using default port 3000`));
       !isNaN(argv[3]) && (port = argv[3]);
     }
     let start = Date.now();
-    require('../').snapshot(file).listen(port, () => {
-      console.log(util.logger.infoConsole2(`file <${path.basename(file)}> analysis completed, cost ${util.formatTime(Date.now() - start)},`));
-      console.log(util.logger.infoConsole2(`open http://localhost:${port} to get more details`));
+    let startText = `Start analysis ${path.basename(file)} (${util.formatSize(stat.size)}), waiting`;
+    process.stdout.write(util.logger.infoConsole2(`${startText}...\n\n`));
+    require('..').snapshot(file).listen(port, () => {
+      process.stdout.write(util.logger.infoConsole2(`Analysis completed, cost `
+        + `${util.logger.warnConsole(`${util.formatTime(Date.now() - start)}`)}`
+        + `${util.logger.infoConsole2(`, open `)}`
+        + `${util.logger.infoConsole(util.logger.lineConsole(`http://localhost:${port}`))} ` +
+        `${util.logger.infoConsole2(`for more details`)}\n`));
+      exec(`"open" http://localhost:${port}`);
     });
     break;
   default:
