@@ -1,6 +1,6 @@
 {
   "name": "devtoolx",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "dev tools box",
   "main": "devtoolx.js",
   "bin": {

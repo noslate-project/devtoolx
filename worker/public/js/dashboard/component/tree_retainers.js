@@ -27,7 +27,8 @@
           if (retainer.type === 'context') {
             raw.edgeClass = 'context';
           }
-          raw.fromEdge = `${retainer.name_or_index}`
+          raw.fromEdge = `${retainer.name_or_index}`;
+          raw.edgeType = retainer.type;
         }
         return raw;
       },
@@ -97,6 +98,9 @@
             }
             vm.loadMoreStatus = false;
           }).catch(err => vm.$message.error(err));
+      },
+      getEdgeType(node) {
+        return node.data.edgeType;
       }
     },
     watch: {
