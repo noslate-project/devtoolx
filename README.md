@@ -10,6 +10,14 @@ JavaScript Developer Toolbox
 npm install devtoolx -g
 ```
 
+## Compatibility
+
+* Node.js v4.x
+* Node.js v6.x
+* Node.js v8.x
+
+Attention: local compilation needs gcc version >= v4.9.2
+
 ## Usage
 
 ### Search node by address
