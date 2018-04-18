@@ -202,12 +202,21 @@ void Parser::GetNodeByOrdinalId(const Nan::FunctionCallbackInfo<Value>& info) {
       type = KRETAINERS;
     }
   }
+  int error_id_count = 0;
   for(int i = 0; i < length; i++) {
     long id = static_cast<long>(list->Get(Nan::New<Number>(i))->ToInteger()->Value());
+    if(id >= parser->snapshotParser->node_count) {
+      error_id_count++;
+      break;
+    }
     if(!info[2]->IsNumber()) {
       limit = parser->snapshotParser->node_util->GetEdgeCount(id, false);
     }
     nodes->Set(i, parser->GetNodeById_(id, current, limit, type));
+  }
+  if(error_id_count > 0) {
+    Nan::ThrowTypeError(Nan::New<String>("node ordinal id wrong!").ToLocalChecked());
+    return;
   }
   info.GetReturnValue().Set(nodes);
 }
