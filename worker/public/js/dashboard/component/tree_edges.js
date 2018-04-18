@@ -4,7 +4,7 @@
     data() {
       return { props: { label: 'name', isLeaf: 'exists' }, node: {}, type: 'edges', loadMoreStatus: false }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getNodeId'],
     methods: {
       formatNode(data, edge, raw) {
         raw = raw || {};
@@ -45,7 +45,7 @@
           vm.node = node;
           vm.getNode(`/ordinal/${vm.rootid}?current=0&limit=${Devtoolx.limit}&type=edges`)
             .then(data => resolve([vm.formatNode(data[0])]))
-            .catch(err => vm.$message.error(err));
+            .catch(err => vm.$message.error(err.message || 'Server Inner Error'));
           return;
         }
         var data = node.data;
@@ -70,7 +70,7 @@
                   });
                 }
                 resolve(result);
-              }).catch(err => vm.$message.error(err));
+              }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
           }
         }
       },
@@ -97,10 +97,7 @@
               rawdata.edgesLeft = p.edges_left;
             }
             vm.loadMoreStatus = false;
-          }).catch(err => vm.$message.error(err));
-      },
-      getEdgeType(node) {
-        return node.data.edgeType;
+          }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
       }
     },
     watch: {

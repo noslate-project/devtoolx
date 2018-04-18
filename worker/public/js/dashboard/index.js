@@ -19,22 +19,21 @@
       },
       searchIdByAddress() {
         if (!this.address) return;
-        if (this.address[0] !== '@') {
-          this.$message.error('node address must starts with \'@\'!');
+        if (this.address[0] !== '@' && isNaN(this.address)) {
+          this.$message.error(`Error address: "${this.address}"`);
+          return;
         }
         var vm = this;
-        axios.get(`/address/${vm.address}?current=0&limit=${Devtoolx.limit}`)
-          .then(res => {
-            let data = res.data;
-            if (data.ok) {
-              data = res.data && res.data.data;
-              Object.assign(vm.nodeData, data)
-              vm.rootid = data.id;
-            } else {
-              vm.$message.error(data.message);
-            }
-          })
-          .catch(err => vm.$message.error(err));
+        var task = '';
+        if (vm.address[0] === '@') {
+          task = vm.getNode(`/address/${vm.address}?current=0&limit=${Devtoolx.limit}`);
+        } else {
+          task = vm.getNode(`/ordinal/${vm.address}?current=0&limit=${Devtoolx.limit}`).then(data => data[0]);
+        }
+        task.then(data => {
+          Object.assign(vm.nodeData, data)
+          vm.rootid = data.id;
+        }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
       },
       getNode(url, method) {
         var vm = this;
@@ -59,6 +58,12 @@
           str = `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
         }
         return str;
+      },
+      getEdgeType(node) {
+        return node.data.edgeType;
+      },
+      getNodeId(node) {
+        return `id: ${node.data.id}`
       }
     }
   })
