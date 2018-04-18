@@ -22,7 +22,7 @@
 
 <script type="text/template" id="tree-template">
     <div>
-        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" lazy>
+        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy>
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
