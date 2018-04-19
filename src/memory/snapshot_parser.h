@@ -11,7 +11,17 @@
 namespace snapshot_parser {
 using nlohmann::json;
 
+typedef struct  {
+  int distance;
+  long ordinal;
+  long* node_to_visit;
+  int* node_to_visit_length;
+  int* node_distances_;
+} snapshot_distance_t;
 typedef std::unordered_map<long, long> AddressMap;
+
+const int NO_DISTANCE = -5;
+const int BASE_SYSTEMDISTANCE = 100000000;
 
 class SnapshotParser {
 public:
@@ -23,6 +33,8 @@ public:
   void BuildTotalRetainer();
   int GetRetainersCount(long id);
   long* GetRetainers(long id);
+  void BuildDistances();
+  int GetDistance(long id);
   static int IndexOf(json array, std::string target);
   json nodes;
   json edges;
@@ -51,12 +63,17 @@ public:
 
 private:
   long* GetFirstEdgeIndexes();
+  static void EnqueueNode_(snapshot_distance_t* t);
+  void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
+  void BFS_(long* node_to_visit, int node_to_visit_length);
+  bool Filter(long ordinal, long edge);
   // address -> node ordinal id
   AddressMap address_map_;
   // total retainers
   long* retaining_nodes_;
   long* retaining_edges_;
   long* first_retainer_index_;
+  int* node_distances_;
 };
 }
 

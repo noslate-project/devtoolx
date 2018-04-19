@@ -10,7 +10,7 @@ class SnapshotParser;
 namespace snapshot_edge {
 using nlohmann::json;
 
-enum edge_types {
+enum EdgeTypes {
   KCONTEXTVARIABLE,
   KELEMENT,
   KPROPERTY,

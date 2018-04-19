@@ -12,7 +12,7 @@
         raw.key = `${Math.random().toString(36).substr(2)}`;
         raw.name = data.name;
         raw.address = data.address;
-        raw.additional = `(type: ${data.type}, self_size: ${this.formatSize(data.self_size)})`;
+        raw.additional = `(type: ${data.type}, self_size: ${this.formatSize(data.self_size)}, distance: ${data.distance})`;
         raw.retainers = data.retainers;
         raw.retainersEnd = data.retainers_end;
         raw.retainersCurrent = data.retainers_current;

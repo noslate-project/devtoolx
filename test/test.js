@@ -19,4 +19,5 @@ function getNode() {
 
 // getNode();
 
-require('..').snapshot(snapshot).listen(3001);
+console.time('cost');
+require('..').snapshot(snapshot).listen(3001, () => console.timeEnd('cost'));

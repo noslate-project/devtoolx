@@ -77,6 +77,7 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
     if(strcmp(*mode, mode_search.c_str()) == 0) {
       parser->snapshotParser->CreateAddressMap();
       parser->snapshotParser->BuildTotalRetainer();
+      parser->snapshotParser->BuildDistances();
     }
   }
 }
@@ -92,6 +93,8 @@ Local<Object> Parser::GetNodeById_(long id, int current, int limit, GetNodeTypes
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
   long self_size = snapshotParser->node_util->GetSelfSize(id, false);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
+  int distance = snapshotParser->GetDistance(id);
+  node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
     long* edges_local = snapshotParser->node_util->GetEdges(id, false);
