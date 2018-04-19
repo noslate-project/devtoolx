@@ -10,7 +10,7 @@ class SnapshotParser;
 namespace snapshot_node {
 using nlohmann::json;
 
-enum node_types {
+enum NodeTypes {
   KHIDDEN,
   KARRAY,
   KSTRING,
