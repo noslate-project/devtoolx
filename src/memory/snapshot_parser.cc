@@ -186,17 +186,34 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
   if(gc_roots == -1)
     return;
   if(user_root_only) {
-    // iterator the "true" root
-    for(int i = 0; i < length; i++) {
-      long target_node = edge_util->GetTargetNode(*(edges + i), true);
-      std::string node_name = node_util->GetName(target_node, false);
-      int type = node_util->GetTypeForInt(target_node, false);
-      // type != synthetic, means user root
-      if(type != snapshot_node::NodeTypes::KSYNTHETIC) {
-        if(visit_nodes.count(target_node) == 0) {
-          user_root->ordinal = target_node;
+    // iterator the "true" root, set user root distance 1 -> global
+    // for(int i = 0; i < length; i++) {
+    //   long target_node = edge_util->GetTargetNode(*(edges + i), true);
+    //   std::string node_name = node_util->GetName(target_node, false);
+    //   int type = node_util->GetTypeForInt(target_node, false);
+    //   // type != synthetic, means user root
+    //   if(type != snapshot_node::NodeTypes::KSYNTHETIC) {
+    //     if(visit_nodes.count(target_node) == 0) {
+    //       user_root->ordinal = target_node;
+    //       action(user_root);
+    //       visit_nodes.insert(std::unordered_map<long, bool>::value_type(target_node, true));
+    //     }
+    //   }
+    // }
+    // set user root gc roots -> synthetic roots -> true roots
+    long* sub_root_edges = node_util->GetEdges(gc_roots, false);
+    int sub_root_edge_length = node_util->GetEdgeCount(gc_roots, false);
+    for(int i = 0; i < sub_root_edge_length; i++) {
+      long sub_root_ordinal = edge_util->GetTargetNode(*(sub_root_edges + i), true);
+      long* sub2_root_edges = node_util->GetEdges(sub_root_ordinal, false);
+      int sub2_root_edge_length = node_util->GetEdgeCount(sub_root_ordinal, false);
+      for(int j = 0; j < sub2_root_edge_length; j++) {
+        long sub2_root_ordinal = edge_util->GetTargetNode(*(sub2_root_edges + j), true);
+        // mark sub sub gc roots
+        if(visit_nodes.count(sub2_root_ordinal) == 0) {
+          user_root->ordinal = sub2_root_ordinal;
           action(user_root);
-          visit_nodes.insert(std::unordered_map<long, bool>::value_type(target_node, true));
+          visit_nodes.insert(std::unordered_map<long, bool>::value_type(sub2_root_ordinal, true));
         }
       }
     }

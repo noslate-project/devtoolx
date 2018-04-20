@@ -39,11 +39,15 @@
             </span>
             </span>
             <span v-if="node.data.loadMore">
-                <td>
-                    <el-button plain size="small" class="more-button" @click="loadMore(node, data)" :loading="loadMoreStatus">
-                        + (left {{ node.data.edgesLeft || node.data.retainersLeft }})
-                    </el-button>
-                </td>
+                <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit)" :loading="loadMoreStatus.b1">
+                    +{{ limit }}
+                </el-button>
+                <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit * 2)" :loading="loadMoreStatus.b2">
+                    +{{ limit * 2 }}
+                </el-button>
+                <el-button plain size="small" class="more-button" @click="loadMore(node, data, node.data.edgesLeft || node.data.retainersLeft)" :loading="loadMoreStatus.b3">
+                    + left {{ node.data.edgesLeft || node.data.retainersLeft }}
+                </el-button>
             </span>
             </span>
         </el-tree>

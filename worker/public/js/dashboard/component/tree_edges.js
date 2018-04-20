@@ -2,7 +2,13 @@
   var TreeEdges = {
     template: '#tree-template',
     data() {
-      return { props: { label: 'name', isLeaf: 'exists' }, node: {}, type: 'edges', loadMoreStatus: false }
+      return {
+        props: { label: 'name', isLeaf: 'exists' },
+        node: {},
+        type: 'edges',
+        loadMoreStatus: { b1: false, b2: false, b3: false },
+        limit: Devtoolx.limit
+      }
     },
     props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getNodeId'],
     methods: {
@@ -74,11 +80,12 @@
           }
         }
       },
-      loadMore(node, rawdata) {
+      loadMore(node, rawdata, number) {
         var vm = this;
         var p = null;
-        vm.loadMoreStatus = true;
-        vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.edgesCurrent}&limit=${Devtoolx.limit}&type=edges`)
+        var setKey = number / Devtoolx.limit === 1 && 'b1' || number / Devtoolx.limit === 2 && 'b2' || 'b3';
+        vm.$set(vm.loadMoreStatus, setKey, true);
+        vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.edgesCurrent}&limit=${number}&type=edges`)
           .then(parent => {
             p = parent = parent[0];
             var ids = parent.edges.map(e => e.to_node).join(',');
@@ -96,7 +103,7 @@
               rawdata.edgesCurrent = p.edges_current;
               rawdata.edgesLeft = p.edges_left;
             }
-            vm.loadMoreStatus = false;
+            vm.$set(vm.loadMoreStatus, setKey, false);
           }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
       }
     },
