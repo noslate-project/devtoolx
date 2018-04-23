@@ -33,6 +33,7 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getNodeByOrdinalId", GetNodeByOrdinalId);
   Nan::SetPrototypeMethod(tpl, "getNodeByAddress", GetNodeByAddress);
   Nan::SetPrototypeMethod(tpl, "getNodeIdByAddress", GetNodeIdByAddress);
+  Nan::SetPrototypeMethod(tpl, "getStatistics", GetStatistics);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
@@ -69,15 +70,15 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
   jsonfile >> profile;
   jsonfile.close();
   // get snapshot parser
-  parser->snapshotParser = new snapshot_parser::SnapshotParser(profile);
+  parser->snapshot_parser = new snapshot_parser::SnapshotParser(profile);
   if(info[0]->IsObject()) {
     Local<Object> options = info[0]->ToObject();
     Nan::Utf8String mode(options->Get(Nan::New<String>("mode").ToLocalChecked()));
     std::string mode_search = "search";
     if(strcmp(*mode, mode_search.c_str()) == 0) {
-      parser->snapshotParser->CreateAddressMap();
-      parser->snapshotParser->BuildTotalRetainer();
-      parser->snapshotParser->BuildDistances();
+      parser->snapshot_parser->CreateAddressMap();
+      parser->snapshot_parser->BuildTotalRetainer();
+      parser->snapshot_parser->BuildDistances();
     }
   }
 }
@@ -85,20 +86,22 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
 Local<Object> Parser::GetNodeById_(long id, int current, int limit, GetNodeTypes get_node_type) {
   Local<Object> node = Nan::New<Object>();
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
-  std::string type = snapshotParser->node_util->GetType(id, false);
+  std::string type = snapshot_parser->node_util->GetType(id, false);
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
-  std::string name = snapshotParser->node_util->GetName(id, false);
+  std::string name = snapshot_parser->node_util->GetName(id, false);
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
-  std::string address = "@" + std::to_string(snapshotParser->node_util->GetAddress(id, false));
+  std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id, false));
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
-  long self_size = snapshotParser->node_util->GetSelfSize(id, false);
+  long self_size = snapshot_parser->node_util->GetSelfSize(id, false);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
-  int distance = snapshotParser->GetDistance(id);
+  int distance = snapshot_parser->GetDistance(id);
   node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
+  bool is_gcroot = snapshot_parser->IsGCRoot(id);
+  node->Set(Nan::New<String>("is_gcroot").ToLocalChecked(), Nan::New<Number>(is_gcroot));
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
-    long* edges_local = snapshotParser->node_util->GetEdges(id, false);
-    int edges_length = snapshotParser->node_util->GetEdgeCount(id, false);
+    long* edges_local = snapshot_parser->node_util->GetEdges(id, false);
+    int edges_length = snapshot_parser->node_util->GetEdgeCount(id, false);
     int start_edge_index = current;
     int stop_edge_index = current + limit;
     if(start_edge_index >= edges_length) {
@@ -110,9 +113,9 @@ Local<Object> Parser::GetNodeById_(long id, int current, int limit, GetNodeTypes
     Local<Array> edges = Nan::New<Array>(stop_edge_index - start_edge_index);
     for(int i = start_edge_index; i < stop_edge_index; i++) {
       Local<Object> edge = Nan::New<Object>();
-      std::string edge_type = snapshotParser->edge_util->GetType(edges_local[i], true);
-      std::string name_or_index = snapshotParser->edge_util->GetNameOrIndex(edges_local[i], true);
-      long to_node = snapshotParser->edge_util->GetTargetNode(edges_local[i], true);
+      std::string edge_type = snapshot_parser->edge_util->GetType(edges_local[i], true);
+      std::string name_or_index = snapshot_parser->edge_util->GetNameOrIndex(edges_local[i], true);
+      long to_node = snapshot_parser->edge_util->GetTargetNode(edges_local[i], true);
       edge->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
       edge->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       edge->Set(Nan::New<String>("to_node").ToLocalChecked(), Nan::New<Number>(to_node));
@@ -129,8 +132,8 @@ Local<Object> Parser::GetNodeById_(long id, int current, int limit, GetNodeTypes
   }
   // get retainers
   if(get_node_type == KALL || get_node_type == KRETAINERS) {
-    long* retainers_local = snapshotParser->GetRetainers(id);
-    int retainers_length = snapshotParser->GetRetainersCount(id);
+    long* retainers_local = snapshot_parser->GetRetainers(id);
+    int retainers_length = snapshot_parser->GetRetainersCount(id);
     int start_retainer_index = current;
     int stop_retainer_index = current + limit;
     if(start_retainer_index >= retainers_length) {
@@ -144,8 +147,8 @@ Local<Object> Parser::GetNodeById_(long id, int current, int limit, GetNodeTypes
       long node = retainers_local[i * 2];
       long edge = retainers_local[i * 2 + 1];
       Local<Object> retainer = Nan::New<Object>();
-      std::string edge_type = snapshotParser->edge_util->GetType(edge, true);
-      std::string name_or_index = snapshotParser->edge_util->GetNameOrIndex(edge, true);
+      std::string edge_type = snapshot_parser->edge_util->GetType(edge, true);
+      std::string name_or_index = snapshot_parser->edge_util->GetNameOrIndex(edge, true);
       retainer->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
       retainer->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       retainer->Set(Nan::New<String>("from_node").ToLocalChecked(), Nan::New<Number>(node));
@@ -170,7 +173,7 @@ void Parser::GetNodeId(const Nan::FunctionCallbackInfo<Value>& info) {
   }
   long source = static_cast<long>(info[0]->ToInteger()->Value());
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
-  long nodeid = parser->snapshotParser->node_util->GetNodeId(source);
+  long nodeid = parser->snapshot_parser->node_util->GetNodeId(source);
   info.GetReturnValue().Set(Nan::New<Number>(nodeid));
 }
 
@@ -208,12 +211,12 @@ void Parser::GetNodeByOrdinalId(const Nan::FunctionCallbackInfo<Value>& info) {
   int error_id_count = 0;
   for(int i = 0; i < length; i++) {
     long id = static_cast<long>(list->Get(Nan::New<Number>(i))->ToInteger()->Value());
-    if(id >= parser->snapshotParser->node_count) {
+    if(id >= parser->snapshot_parser->node_count) {
       error_id_count++;
       break;
     }
     if(!info[2]->IsNumber()) {
-      limit = parser->snapshotParser->node_util->GetEdgeCount(id, false);
+      limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
     }
     nodes->Set(i, parser->GetNodeById_(id, current, limit, type));
   }
@@ -236,7 +239,7 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
     Nan::ThrowTypeError(Nan::New<String>("argument 0 must be startwith \"@\"!").ToLocalChecked());
     return;
   }
-  long id = parser->snapshotParser->SearchOrdinalByAddress(atol((*addr) + 1));
+  long id = parser->snapshot_parser->SearchOrdinalByAddress(atol((*addr) + 1));
   if(id == -1) {
     std::string addrs = *addr;
     std::string error = "address \"" + addrs + "\" is wrong!";
@@ -247,7 +250,7 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
   if(info[1]->IsNumber()) {
     current = static_cast<int>(info[1]->ToInteger()->Value());
   }
-  int limit = parser->snapshotParser->node_util->GetEdgeCount(id, false);
+  int limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
   if(info[2]->IsNumber()) {
     limit = static_cast<int>(info[2]->ToInteger()->Value());
   }
@@ -267,7 +270,7 @@ void Parser::GetNodeIdByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
     return;
   }
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
-  long id = parser->snapshotParser->SearchOrdinalByAddress(atol((*addr) + 1));
+  long id = parser->snapshot_parser->SearchOrdinalByAddress(atol((*addr) + 1));
   if(id == -1) {
     std::string addrs = *addr;
     std::string error = "address \"" + addrs + "\" is wrong!";
@@ -280,5 +283,14 @@ void Parser::GetNodeIdByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
 void Parser::GetFileName(const Nan::FunctionCallbackInfo<Value>& info) {
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
   info.GetReturnValue().Set(Nan::New(parser->filename_).ToLocalChecked());
+}
+
+void Parser::GetStatistics(const Nan::FunctionCallbackInfo<Value>& info) {
+  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  Local<Object> statistics = Nan::New<Object>();
+  statistics->Set(Nan::New<String>("node_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->node_count));
+  statistics->Set(Nan::New<String>("edge_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->edge_count));
+  statistics->Set(Nan::New<String>("gcroots").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->gcroots));
+  info.GetReturnValue().Set(statistics);
 }
 }

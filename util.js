@@ -36,6 +36,8 @@ Usage: devtoolx [CMD]... [ARGS]
 
   ${logger.infoConsole(`-s <file> [-p <port>]`)}   analysis js heapsnapshot, start web sever
                           with default port 3000, change port by "-p <port>"
+  
+  ${logger.infoConsole(`--no-open`)}               don't auto open browser when analysis completed
 `;
 
 exports.formatTime = function (ts) {

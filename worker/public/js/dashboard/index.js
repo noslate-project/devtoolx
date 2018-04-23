@@ -10,8 +10,17 @@
       return {
         address: '',
         rootid: 0,
-        nodeData: {}
+        nodeData: {},
+        statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-' }
       }
+    },
+    mounted() {
+      var vm = this;
+      vm.getNode(`/statistics`).then(data => {
+        vm.$set(vm.statistics, 'nodeCount', data.node_count || '-');
+        vm.$set(vm.statistics, 'edgeCount', data.edge_count || '-');
+        vm.$set(vm.statistics, 'gcRoots', data.gcroots || '-');
+      }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
     },
     methods: {
       cleanInput() {

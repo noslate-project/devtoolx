@@ -18,7 +18,9 @@ typedef struct  {
   int* node_to_visit_length;
   int* node_distances_;
 } snapshot_distance_t;
+
 typedef std::unordered_map<long, long> AddressMap;
+typedef std::unordered_map<long, bool> GCRootsMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -35,6 +37,7 @@ public:
   long* GetRetainers(long id);
   void BuildDistances();
   int GetDistance(long id);
+  int IsGCRoot(long id);
   static int IndexOf(json array, std::string target);
   json nodes;
   json edges;
@@ -60,6 +63,7 @@ public:
   long* first_edge_indexes;
   snapshot_node::Node* node_util;
   snapshot_edge::Edge* edge_util;
+  int gcroots;
 
 private:
   long* GetFirstEdgeIndexes();
@@ -69,6 +73,8 @@ private:
   bool Filter(long ordinal, long edge);
   // address -> node ordinal id
   AddressMap address_map_;
+  // ordinal id -> bool
+  GCRootsMap gcroots_map_;
   // total retainers
   long* retaining_nodes_;
   long* retaining_edges_;
