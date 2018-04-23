@@ -48,7 +48,9 @@ switch (argv[0]) {
         + `${util.logger.infoConsole2(`, open `)}`
         + `${util.logger.infoConsole(util.logger.lineConsole(`http://localhost:${port}`))} ` +
         `${util.logger.infoConsole2(`for more details`)}\n`));
-      exec(`"open" http://localhost:${port}`);
+      if (argv.every(arg => arg !== '--no-open')) {
+        exec(`"open" http://localhost:${port}`);
+      }
     });
     break;
   default:
