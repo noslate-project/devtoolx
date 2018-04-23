@@ -224,6 +224,13 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
       long sub_root_ordinal = edge_util->GetTargetNode(*(sub_root_edges + i), true);
       long* sub2_root_edges = node_util->GetEdges(sub_root_ordinal, false);
       int sub2_root_edge_length = node_util->GetEdgeCount(sub_root_ordinal, false);
+      bool need_add_gc_root = true;
+      std::string sub_root_name = node_util->GetName(sub_root_ordinal, false);
+      if(sub_root_name.compare("(Internalized strings)") == 0
+          || sub_root_name.compare("(External strings)") == 0
+          || sub_root_name.compare("(Smi roots)") == 0) {
+        need_add_gc_root = false;
+      }
       for(int j = 0; j < sub2_root_edge_length; j++) {
         long sub2_root_ordinal = edge_util->GetTargetNode(*(sub2_root_edges + j), true);
         // mark sub sub gc roots
@@ -231,6 +238,14 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
           user_root->ordinal = sub2_root_ordinal;
           action(user_root);
           visit_nodes.insert(std::unordered_map<long, bool>::value_type(sub2_root_ordinal, true));
+        }
+        // add gc root
+        if(need_add_gc_root) {
+          int sub_to_sub2_edge_type = edge_util->GetTypeForInt(*(sub2_root_edges + j), true);
+          if(sub_to_sub2_edge_type != snapshot_edge::EdgeTypes::KWEAK) {
+            gcroots++;
+            gcroots_map_.insert(GCRootsMap::value_type(sub2_root_ordinal, true));
+          }
         }
       }
       // mark sub gc roots
@@ -308,5 +323,12 @@ void SnapshotParser::BuildDistances() {
 
 int SnapshotParser::GetDistance(long id) {
   return node_distances_[id];
+}
+
+int SnapshotParser::IsGCRoot(long id) {
+  int count = gcroots_map_.count(id);
+  if(count == 0)
+    return 0;
+  return 1;
 }
 }

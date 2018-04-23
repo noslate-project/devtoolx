@@ -1,45 +1,48 @@
-# DevTools X
+# <span style="font-family:Menlo;">DevTools X</span>
 
-JavaScript Developer Toolbox
+<span style="font-family:Menlo;">JavaScript Developer Toolbox</span>
 
-* Aid in the analysis of memory
+* <span style="font-family:Menlo;">Aid in the analysis of memory</span>
 
-## Installation
+## <span style="font-family:Menlo;">Installation</span>
 
 ```bash
 npm install devtoolx -g
 ```
 
-## Compatibility
+## <span style="font-family:Menlo;">Compatibility</span>
 
-* Node.js v4.x
-* Node.js v6.x
-* Node.js v8.x
+* <span style="font-family:Menlo;">Node.js v4.x</span>
+* <span style="font-family:Menlo;">Node.js v6.x</span>
+* <span style="font-family:Menlo;">Node.js v8.x</span>
 
-Attention: local compilation needs gcc version >= v4.9.2
+<span style="font-family:Menlo;">Attention: local compilation needs gcc version >= v4.9.2</span>
 
-## Usage
+## <span style="font-family:Menlo;">Usage</span>
 
-### Search node by address
+### <span style="font-family:Menlo;">Search node by address or ordinal id</span>
 
 ```bash
 devtoolx -s <heapsnapshot file> [-p <port>]
 ```
 
-example:
+<span style="font-family:Menlo;">example:</span>
 
 ![devtoox.gif](https://raw.githubusercontent.com/hyj1991/devtoolx/master/assets/devtoolx.gif)
 
+### <span style="font-family:Menlo;">Color</span>
 
-### Help
+* <span style="font-family:Menlo;background:#c0eafd">means gc root</span>
+
+### <span style="font-family:Menlo;">Help</span>
 
 ```bash
 devtoolx -h
 devtoolx --help
 ```
 
-## License
+## <span style="font-family:Menlo;">License</span>
 
-[MIT License](LICENSE)
+[<span style="font-family:Menlo;">MIT License</span>](LICENSE)
 
-Copyright (c) 2018 hyj1991
+<span style="font-family:Menlo;">Copyright (c) 2018 hyj1991</span>

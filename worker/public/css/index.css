@@ -25,7 +25,12 @@
 }
 
 .node-name {
-  color: rgb(48, 57, 66)
+  color: rgb(48, 57, 66);
+}
+
+.node-gcroot {
+  color: rgb(48, 57, 66);
+  background: #c0eafd;
 }
 
 .address {
@@ -42,4 +47,16 @@
   color: #673ab7;
   margin-top:5px;
   margin-left: -15px;
+}
+
+.statistics{
+  font-family: Menlo;
+  margin-left: 20px;
+  margin-bottom: 0px;
+  margin-top: 23px;
+  font-size: 15px;
+}
+
+.statistics-value{
+  color: #d20d0d;
 }

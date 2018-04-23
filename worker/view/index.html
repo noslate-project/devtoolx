@@ -9,7 +9,13 @@
 
 <body>
     <div id="app">
-        <el-input style="width:250px;margin-left:20px;margin-top:20px" placeholder="please input node address" prefix-icon="el-icon-search"
+        <p class="statistics">
+            Object count:
+            <span class="statistics-value">{{ statistics.nodeCount }}</span>, Edge count:
+            <span class="statistics-value">{{ statistics.edgeCount }}</span>, GCRoots:
+            <span class="statistics-value">{{ statistics.gcRoots }}</span>
+        </p>
+        <el-input style="width:260px;margin-left:20px;margin-top:20px" placeholder="please input object address | id" prefix-icon="el-icon-search"
             v-model="address" @focus="cleanInput">
         </el-input>
         <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
@@ -33,7 +39,7 @@
                 <strong v-if="type === 'retainers'" class="address">in</strong>
             </span>
             <span :class="node.data.class">
-                <strong class="node-name">{{ node.data.name }}</strong>
+                <strong :class="node.data.nameClass">{{ node.data.name }}</strong>
                 <strong class="address" :title="getNodeId(node)">{{ node.data.address }}</strong>
                 <small class="additional">{{ node.data.additional }}</small>
             </span>

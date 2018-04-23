@@ -16,11 +16,14 @@
         raw = raw || {};
         raw.id = data.id;
         raw.key = `${Math.random().toString(36).substr(2)}`;
+        if (!data.name && data.type === 'array') data.name = '[]';
+        if (!data.name && data.type === 'closure') data.name = '()';
         if (typeof data.name === 'string' && data.name.length > 54) {
           raw.name = data.name.substr(0, 54);
         } else {
           raw.name = data.name;
         }
+        raw.nameClass = 'node-name';
         raw.address = data.address;
         raw.additional = `(type: ${data.type}, self_size: ${this.formatSize(data.self_size)}, distance: ${data.distance})`;
         raw.edges = data.edges;

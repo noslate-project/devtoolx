@@ -51,6 +51,15 @@ function createServer(snapshot) {
     }
   });
 
+  app.get('/statistics', (req, res) => {
+    try {
+      let statistics = parser.getStatistics();
+      res.json({ ok: true, data: statistics });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
   return app;
 }
 
