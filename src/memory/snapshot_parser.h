@@ -13,14 +13,14 @@ using nlohmann::json;
 
 typedef struct  {
   int distance;
-  long ordinal;
-  long* node_to_visit;
+  int ordinal;
+  int* node_to_visit;
   int* node_to_visit_length;
   int* node_distances_;
 } snapshot_distance_t;
 
-typedef std::unordered_map<long, long> AddressMap;
-typedef std::unordered_map<long, bool> GCRootsMap;
+typedef std::unordered_map<long, int> AddressMap;
+typedef std::unordered_map<int, bool> GCRootsMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -31,13 +31,13 @@ public:
   ~SnapshotParser();
   void CreateAddressMap();
   void ClearAddressMap();
-  long SearchOrdinalByAddress(long address);
+  int SearchOrdinalByAddress(long address);
   void BuildTotalRetainer();
-  int GetRetainersCount(long id);
-  long* GetRetainers(long id);
+  int GetRetainersCount(int id);
+  int* GetRetainers(int id);
   void BuildDistances();
-  int GetDistance(long id);
-  int IsGCRoot(long id);
+  int GetDistance(int id);
+  int IsGCRoot(int id);
   static int IndexOf(json array, std::string target);
   json nodes;
   json edges;
@@ -46,8 +46,8 @@ public:
   int root_index = 0;
   int node_field_length;
   int edge_field_length;
-  long node_count;
-  long edge_count;
+  int node_count;
+  int edge_count;
   json node_types;
   json edge_types;
   int node_type_offset;
@@ -59,26 +59,26 @@ public:
   int edge_type_offset;
   int edge_name_or_index_offset;
   int edge_to_node_offset;
-  long* edge_from_node;
-  long* first_edge_indexes;
+  int* edge_from_node;
+  int* first_edge_indexes;
   snapshot_node::Node* node_util;
   snapshot_edge::Edge* edge_util;
   int gcroots;
 
 private:
-  long* GetFirstEdgeIndexes();
+  int* GetFirstEdgeIndexes();
   static void EnqueueNode_(snapshot_distance_t* t);
   void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
-  void BFS_(long* node_to_visit, int node_to_visit_length);
-  bool Filter(long ordinal, long edge);
+  void BFS_(int* node_to_visit, int node_to_visit_length);
+  bool Filter(int ordinal, int edge);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
   // total retainers
-  long* retaining_nodes_;
-  long* retaining_edges_;
-  long* first_retainer_index_;
+  int* retaining_nodes_;
+  int* retaining_edges_;
+  int* first_retainer_index_;
   int* node_distances_;
 };
 }

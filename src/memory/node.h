@@ -29,15 +29,15 @@ class Node {
 public:
   explicit Node(snapshot_parser::SnapshotParser* parser);
   ~Node();
-  long GetNodeId(long source );
-  long GetAddress(long id, bool source);
-  std::string GetType(long id, bool source);
-  int GetTypeForInt(long id, bool source);
-  std::string GetName(long id, bool source);
-  long GetNameForLong(long id, bool source);
-  long* GetEdges(long id, bool source);
-  int GetEdgeCount(long id, bool source);
-  long GetSelfSize(long id, bool source);
+  int GetNodeId(int source );
+  long GetAddress(int id, bool source);
+  std::string GetType(int id, bool source);
+  int GetTypeForInt(int id, bool source);
+  std::string GetName(int id, bool source);
+  int GetNameForInt(int id, bool source);
+  int* GetEdges(int id, bool source);
+  int GetEdgeCount(int id, bool source);
+  int GetSelfSize(int id, bool source);
 private:
   snapshot_parser::SnapshotParser* parser_;
 };

@@ -26,7 +26,7 @@ public:
 private:
   explicit Parser(char* filename, int filelength);
   ~Parser();
-  v8::Local<v8::Object> GetNodeById_(long id, int current, int limit, GetNodeTypes type);
+  v8::Local<v8::Object> GetNodeById_(int id, int current, int limit, GetNodeTypes type);
   static void New(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void GetFileName(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void Parse(const Nan::FunctionCallbackInfo<v8::Value>& info);
