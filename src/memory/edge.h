@@ -24,10 +24,10 @@ class Edge {
 public:
   explicit Edge(snapshot_parser::SnapshotParser* parser);
   ~Edge();
-  std::string GetType(long id, bool source);
-  int GetTypeForInt(long id, bool source);
-  std::string GetNameOrIndex(long id, bool source);
-  long GetTargetNode(long id, bool source);
+  std::string GetType(int id, bool source);
+  int GetTypeForInt(int id, bool source);
+  std::string GetNameOrIndex(int id, bool source);
+  int GetTargetNode(int id, bool source);
 private:
   snapshot_parser::SnapshotParser* parser_;
 };
