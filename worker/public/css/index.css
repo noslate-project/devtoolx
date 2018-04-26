@@ -29,8 +29,11 @@
 }
 
 .node-gcroot {
-  color: rgb(48, 57, 66);
-  background: #c0eafd;
+  background-color: #c0eafd;
+}
+
+.node-js-reference {
+  background-color: rgb(255, 255, 200);
 }
 
 .address {
