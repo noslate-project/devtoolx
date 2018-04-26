@@ -1,4 +1,4 @@
-#include<nan.h>
+#include <nan.h>
 #include <iostream>
 #include <unordered_map>
 #include "node.h"
@@ -19,8 +19,15 @@ typedef struct  {
   int* node_distances_;
 } snapshot_distance_t;
 
+typedef struct {
+  int ordinal;
+  int edge;
+  int* node_distances;
+} snapshot_retainer_t;
+
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
+typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -34,7 +41,7 @@ public:
   int SearchOrdinalByAddress(long address);
   void BuildTotalRetainer();
   int GetRetainersCount(int id);
-  int* GetRetainers(int id);
+  snapshot_retainer_t** GetRetainers(int id);
   void BuildDistances();
   int GetDistance(int id);
   int IsGCRoot(int id);
@@ -66,15 +73,18 @@ public:
   int gcroots;
 
 private:
-  int* GetFirstEdgeIndexes();
+  int* GetFirstEdgeIndexes_();
   static void EnqueueNode_(snapshot_distance_t* t);
   void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
   void BFS_(int* node_to_visit, int node_to_visit_length);
-  bool Filter(int ordinal, int edge);
+  bool Filter_(int ordinal, int edge);
+  static bool SortByDistance_(snapshot_retainer_t* lhs, snapshot_retainer_t* rhs);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
+  // ordinal id -> int* (ordered retainers)
+  OrderedRetainersMap ordered_retainers_map_;
   // total retainers
   int* retaining_nodes_;
   int* retaining_edges_;

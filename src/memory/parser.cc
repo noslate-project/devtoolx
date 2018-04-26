@@ -11,6 +11,7 @@ using v8::Value;
 using v8::Array;
 using v8::Number;
 using v8::Boolean;
+using snapshot_parser::snapshot_retainer_t;
 
 Nan::Persistent<Function> Parser::constructor;
 
@@ -132,7 +133,7 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   }
   // get retainers
   if(get_node_type == KALL || get_node_type == KRETAINERS) {
-    int* retainers_local = snapshot_parser->GetRetainers(id);
+    snapshot_retainer_t** retainers_local = snapshot_parser->GetRetainers(id);
     int retainers_length = snapshot_parser->GetRetainersCount(id);
     int start_retainer_index = current;
     int stop_retainer_index = current + limit;
@@ -144,8 +145,9 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
     }
     Local<Array> retainers = Nan::New<Array>(stop_retainer_index - start_retainer_index);
     for(int i = start_retainer_index; i < stop_retainer_index; i++) {
-      int node = retainers_local[i * 2];
-      int edge = retainers_local[i * 2 + 1];
+      snapshot_retainer_t* retainer_local = *(retainers_local + i);
+      int node = retainer_local->ordinal;
+      int edge = retainer_local->edge;
       Local<Object> retainer = Nan::New<Object>();
       std::string edge_type = snapshot_parser->edge_util->GetType(edge, true);
       std::string name_or_index = snapshot_parser->edge_util->GetNameOrIndex(edge, true);
@@ -162,6 +164,9 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       node->Set(Nan::New<String>("retainers_end").ToLocalChecked(), Nan::New<Boolean>(true));
     }
     node->Set(Nan::New<String>("retainers").ToLocalChecked(), retainers);
+    // do not free snapshot_retainer_t** retainers_local because it'll be cached
+    // delete[] retainers_local;
+    // retainers_local = nullptr;
   }
   return node;
 }

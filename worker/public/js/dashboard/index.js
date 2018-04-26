@@ -1,5 +1,5 @@
 (function () {
-  Devtoolx.limit = 50;
+  Devtoolx.limit = 25;
   new Vue({
     el: '#app',
     components: {

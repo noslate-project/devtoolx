@@ -27,7 +27,7 @@ SnapshotParser::SnapshotParser(json profile) {
   edge_name_or_index_offset = IndexOf(edge_fields, "name_or_index");
   edge_to_node_offset = IndexOf(edge_fields, "to_node");
   edge_from_node = new int[edge_count];
-  first_edge_indexes = GetFirstEdgeIndexes();
+  first_edge_indexes = GetFirstEdgeIndexes_();
   node_util = new snapshot_node::Node(this);
   edge_util = new snapshot_edge::Edge(this);
 }
@@ -44,7 +44,7 @@ int SnapshotParser::IndexOf(json array, std::string target) {
   return -1;
 }
 
-int* SnapshotParser::GetFirstEdgeIndexes() {
+int* SnapshotParser::GetFirstEdgeIndexes_() {
   int* first_edge_indexes = new int[node_count];
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
@@ -127,17 +127,23 @@ int SnapshotParser::GetRetainersCount(int id) {
   return static_cast<int>(next_retainer_index - first_retainer_index);
 }
 
-int* SnapshotParser::GetRetainers(int id) {
+snapshot_retainer_t** SnapshotParser::GetRetainers(int id) {
+  if(ordered_retainers_map_.count(id) != 0) {
+    return ordered_retainers_map_.at(id);
+  }
   int first_retainer_index = first_retainer_index_[id];
   int next_retainer_index = first_retainer_index_[id + 1];
   int length = static_cast<int>(next_retainer_index - first_retainer_index);
-  int* retainers = new int[length * 2];
+  snapshot_retainer_t** retainers = new snapshot_retainer_t*[length];
   for(int i = first_retainer_index; i < next_retainer_index; i++) {
-    int node = retaining_nodes_[i];
-    int edge = retaining_edges_[i];
-    retainers[(i - first_retainer_index) * 2] = node;
-    retainers[(i - first_retainer_index) * 2 + 1] = edge;
+    snapshot_retainer_t* retainer = new snapshot_retainer_t;
+    retainer->ordinal = retaining_nodes_[i];
+    retainer->edge = retaining_edges_[i];
+    retainer->node_distances = node_distances_;
+    retainers[i - first_retainer_index] = retainer;
   }
+  std::sort(retainers, retainers + length, SortByDistance_);
+  ordered_retainers_map_.insert(OrderedRetainersMap::value_type(id, retainers));
   return retainers;
 }
 
@@ -149,7 +155,7 @@ void SnapshotParser::EnqueueNode_(snapshot_distance_t* t) {
   *(t->node_to_visit_length) += 1;
 }
 
-bool SnapshotParser::Filter(int ordinal, int edge) {
+bool SnapshotParser::Filter_(int ordinal, int edge) {
   int node_type = node_util->GetTypeForInt(ordinal, false);
   if(node_type == snapshot_node::NodeTypes::KHIDDEN) {
     std::string edge_name = edge_util->GetNameOrIndex(edge, true);
@@ -168,6 +174,12 @@ bool SnapshotParser::Filter(int ordinal, int edge) {
     return index < 2 || (index % 3) != 1;
   }
   return true;
+}
+
+bool SnapshotParser::SortByDistance_(snapshot_retainer_t* lhs, snapshot_retainer_t* rhs) {
+  int lhs_distance = lhs->node_distances[lhs->ordinal];
+  int rhs_distance = lhs->node_distances[rhs->ordinal];
+  return lhs_distance < rhs_distance;
 }
 
 void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only) {
@@ -284,7 +296,7 @@ void SnapshotParser::BFS_(int* node_to_visit, int node_to_visit_length) {
       if(node_distances_[child_ordinal] != NO_DISTANCE)
         continue;
       // need optimized filter
-      // if(!Filter(ordinal, *(edges + i)))
+      // if(!Filter_(ordinal, *(edges + i)))
       // continue;
       node_distances_[child_ordinal] = distance;
       node_to_visit[node_to_visit_length++] = child_ordinal;

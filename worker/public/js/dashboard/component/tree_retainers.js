@@ -18,8 +18,8 @@
         raw.key = `${Math.random().toString(36).substr(2)}`;
         if (!data.name && data.type === 'array') data.name = '[]';
         if (!data.name && data.type === 'closure') data.name = '()';
-        if (typeof data.name === 'string' && data.name.length > 50) {
-          raw.name = data.name.substr(0, 50);
+        if (typeof data.name === 'string' && data.name.length > 100) {
+          raw.name = data.name.substr(0, 100);
         } else {
           raw.name = data.name;
         }
@@ -90,7 +90,7 @@
       loadMore(node, rawdata, number) {
         var vm = this;
         var p = null;
-        var setKey = number / Devtoolx.limit === 1 && 'b1' || number / Devtoolx.limit === 2 && 'b2' || 'b3';
+        var setKey = number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
         vm.$set(vm.loadMoreStatus, setKey, true);
         vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.retainersCurrent}&limit=${number}&type=retainers`)
           .then(parent => {
