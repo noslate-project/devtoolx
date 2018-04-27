@@ -139,10 +139,13 @@ snapshot_retainer_t** SnapshotParser::GetRetainers(int id) {
     snapshot_retainer_t* retainer = new snapshot_retainer_t;
     retainer->ordinal = retaining_nodes_[i];
     retainer->edge = retaining_edges_[i];
-    retainer->node_distances = node_distances_;
     retainers[i - first_retainer_index] = retainer;
   }
-  std::sort(retainers, retainers + length, SortByDistance_);
+  std::sort(retainers, retainers + length, [this](snapshot_retainer_t* lhs, snapshot_retainer_t*rhs) {
+    int lhs_distance = this->node_distances_[lhs->ordinal];
+    int rhs_distance = this->node_distances_[rhs->ordinal];
+    return lhs_distance < rhs_distance;
+  });
   ordered_retainers_map_.insert(OrderedRetainersMap::value_type(id, retainers));
   return retainers;
 }
@@ -174,12 +177,6 @@ bool SnapshotParser::Filter_(int ordinal, int edge) {
     return index < 2 || (index % 3) != 1;
   }
   return true;
-}
-
-bool SnapshotParser::SortByDistance_(snapshot_retainer_t* lhs, snapshot_retainer_t* rhs) {
-  int lhs_distance = lhs->node_distances[lhs->ordinal];
-  int rhs_distance = lhs->node_distances[rhs->ordinal];
-  return lhs_distance < rhs_distance;
 }
 
 void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only) {

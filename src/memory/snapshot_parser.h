@@ -22,7 +22,6 @@ typedef struct  {
 typedef struct {
   int ordinal;
   int edge;
-  int* node_distances;
 } snapshot_retainer_t;
 
 typedef std::unordered_map<long, int> AddressMap;
@@ -78,7 +77,6 @@ private:
   void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
   void BFS_(int* node_to_visit, int node_to_visit_length);
   bool Filter_(int ordinal, int edge);
-  static bool SortByDistance_(snapshot_retainer_t* lhs, snapshot_retainer_t* rhs);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
