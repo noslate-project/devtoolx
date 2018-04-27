@@ -80,6 +80,7 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
       parser->snapshot_parser->CreateAddressMap();
       parser->snapshot_parser->BuildTotalRetainer();
       parser->snapshot_parser->BuildDistances();
+      parser->snapshot_parser->BuildDominatorTree();
     }
   }
 }

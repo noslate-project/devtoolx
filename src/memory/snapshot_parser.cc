@@ -17,22 +17,22 @@ SnapshotParser::SnapshotParser(json profile) {
   edge_count = static_cast<int>(edges.size() / edge_field_length);
   node_types = snapshot["meta"]["node_types"][0];
   edge_types = snapshot["meta"]["edge_types"][0];
-  node_type_offset = IndexOf(node_fields, "type");
-  node_name_offset = IndexOf(node_fields, "name");
-  node_address_offset = IndexOf(node_fields, "id");
-  node_self_size_offset = IndexOf(node_fields, "self_size");
-  node_edge_count_offset = IndexOf(node_fields, "edge_count");
-  node_trace_nodeid_offset = IndexOf(node_fields, "trace_node_id");
-  edge_type_offset = IndexOf(edge_fields, "type");
-  edge_name_or_index_offset = IndexOf(edge_fields, "name_or_index");
-  edge_to_node_offset = IndexOf(edge_fields, "to_node");
+  node_type_offset = IndexOf_(node_fields, "type");
+  node_name_offset = IndexOf_(node_fields, "name");
+  node_address_offset = IndexOf_(node_fields, "id");
+  node_self_size_offset = IndexOf_(node_fields, "self_size");
+  node_edge_count_offset = IndexOf_(node_fields, "edge_count");
+  node_trace_nodeid_offset = IndexOf_(node_fields, "trace_node_id");
+  edge_type_offset = IndexOf_(edge_fields, "type");
+  edge_name_or_index_offset = IndexOf_(edge_fields, "name_or_index");
+  edge_to_node_offset = IndexOf_(edge_fields, "to_node");
   edge_from_node = new int[edge_count];
   first_edge_indexes = GetFirstEdgeIndexes_();
   node_util = new snapshot_node::Node(this);
   edge_util = new snapshot_edge::Edge(this);
 }
 
-int SnapshotParser::IndexOf(json array, std::string target) {
+int SnapshotParser::IndexOf_(json array, std::string target) {
   const char* t = target.c_str();
   int size = array.size();
   for (int i = 0; i < size; i++) {
@@ -42,6 +42,12 @@ int SnapshotParser::IndexOf(json array, std::string target) {
     }
   }
   return -1;
+}
+
+void SnapshotParser::FillArray_(int* array, int length, int fill) {
+  for(int i = 0; i < length; i++) {
+    *(array + i) = fill;
+  }
 }
 
 int* SnapshotParser::GetFirstEdgeIndexes_() {
@@ -141,7 +147,7 @@ snapshot_retainer_t** SnapshotParser::GetRetainers(int id) {
     retainer->edge = retaining_edges_[i];
     retainers[i - first_retainer_index] = retainer;
   }
-  std::sort(retainers, retainers + length, [this](snapshot_retainer_t* lhs, snapshot_retainer_t*rhs) {
+  std::sort(retainers, retainers + length, [this](snapshot_retainer_t* lhs, snapshot_retainer_t* rhs) {
     int lhs_distance = this->node_distances_[lhs->ordinal];
     int rhs_distance = this->node_distances_[rhs->ordinal];
     return lhs_distance < rhs_distance;
@@ -339,5 +345,198 @@ int SnapshotParser::IsGCRoot(int id) {
   if(count == 0)
     return 0;
   return 1;
+}
+
+void SnapshotParser::BuildDominatorTree() {
+  CalculateFlags_();
+  snapshot_post_order_t* ptr = BuildPostOrderIndex_();
+  BuildDominatorTree_(ptr);
+}
+
+bool SnapshotParser::IsEssentialEdge_(int ordinal, int type) {
+  return type != snapshot_edge::EdgeTypes::KWEAK &&
+         (type != snapshot_edge::EdgeTypes::KSHORTCUT || ordinal == root_index);
+}
+
+void SnapshotParser::CalculateFlags_() {
+  flags_ = new int[node_count];
+  FillArray_(flags_, node_count, 0);
+  int* node_to_visit = new int[node_count];
+  int node_to_visit_length = 0;
+  for(int edge_index = first_edge_indexes[root_index],
+      end_edge_index = first_edge_indexes[root_index + 1];
+      edge_index < end_edge_index; edge_index += edge_field_length) {
+    int target_node = edge_util->GetTargetNode(edge_index, true);
+    int edge_type = edge_util->GetTypeForInt(edge_index, true);
+    if(edge_type == snapshot_edge::EdgeTypes::KELEMENT) {
+      int node_type = node_util->GetTypeForInt(target_node, false);
+      std::string node_name = node_util->GetName(target_node, false);
+      if(!(node_type == snapshot_node::NodeTypes::KSYNTHETIC
+           && node_name.compare("(Document DOM trees)") ==  0))
+        continue;
+    } else if(edge_type != snapshot_edge::EdgeTypes::KSHORTCUT)
+      continue;
+    node_to_visit[node_to_visit_length++] = target_node;
+    flags_[target_node] |= page_object_flag_;
+  }
+  // mark object from global/window/dom
+  while(node_to_visit_length) {
+    int ordinal = node_to_visit[--node_to_visit_length];
+    int begin_edge_index = first_edge_indexes[ordinal];
+    int end_edge_index = first_edge_indexes[ordinal + 1];
+    for(int edge_index = begin_edge_index;
+        edge_index < end_edge_index; edge_index += edge_field_length) {
+      int child_ordinal = edge_util->GetTargetNode(edge_index, true);
+      // has been marked
+      if(flags_[child_ordinal] & page_object_flag_)
+        continue;
+      int child_type = edge_util->GetTypeForInt(edge_index, true);
+      if(child_type == snapshot_edge::EdgeTypes::KWEAK)
+        continue;
+      node_to_visit[node_to_visit_length++] = child_ordinal;
+      flags_[child_ordinal] |= page_object_flag_;
+    }
+  }
+}
+
+snapshot_post_order_t* SnapshotParser::BuildPostOrderIndex_() {
+  int* stack_nodes = new int[node_count];
+  int* stack_current_edge = new int[node_count];
+  int* post_order_index_to_ordinal = new int[node_count]();
+  int* ordinal_to_post_order_index = new int[node_count]();
+  int* visited = new int[node_count]();
+  int post_order_index = 0;
+  // set stack
+  int stack_top = 0;
+  stack_nodes[0] = root_index;
+  stack_current_edge[0] = first_edge_indexes[root_index];
+  visited[root_index] = 1;
+  int iteration = 0;
+  while(true) {
+    ++iteration;
+    // dfs
+    while(stack_top >= 0) {
+      int ordinal = stack_nodes[stack_top];
+      int edge_index = stack_current_edge[stack_top];
+      int end_edge_index = first_edge_indexes[ordinal + 1];
+      if(edge_index < end_edge_index ) {
+        // stack edge current offset to next edge
+        stack_current_edge[stack_top] += edge_field_length;
+        int edge_type = edge_util->GetTypeForInt(edge_index, true);
+        if(!IsEssentialEdge_(ordinal, edge_type))
+          continue;
+        int target_node = edge_util->GetTargetNode(edge_index, true);
+        if(visited[target_node] == 1)
+          continue;
+        int node_flag = flags_[ordinal] & page_object_flag_;
+        int child_node_flag = flags_[target_node] & page_object_flag_;
+        if(ordinal != root_index && child_node_flag != 0 &&  node_flag == 0)
+          continue;
+        ++stack_top;
+        stack_nodes[stack_top] = target_node;
+        stack_current_edge[stack_top] = first_edge_indexes[target_node];
+        visited[target_node] = 1;
+      } else {
+        ordinal_to_post_order_index[ordinal] = post_order_index;
+        post_order_index_to_ordinal[post_order_index++] = ordinal;
+        --stack_top;
+      }
+    }
+    // TODO: may be have some unreachable object fromm root_index, can give warnings
+    if (post_order_index == node_count || iteration > 1)
+      break;
+  }
+  // return struct
+  snapshot_post_order_t* ptr = new snapshot_post_order_t;
+  ptr->ordinal_to_post_order_index = ordinal_to_post_order_index;
+  ptr->post_order_index_to_ordinal = post_order_index_to_ordinal;
+  return ptr;
+}
+
+void SnapshotParser::BuildDominatorTree_(snapshot_post_order_t* ptr) {
+  int root_post_ordered_index = node_count - 1;
+  int no_entry = node_count;
+  int* dominators = new int[node_count]();
+  for (int i = 0; i < root_post_ordered_index; ++i)
+    dominators[i] = no_entry;
+  dominators[root_post_ordered_index] = root_post_ordered_index;
+  int* affected = new int[node_count]();
+  int ordinal;
+  {
+    ordinal = root_index;
+    int end_edge_index = first_edge_indexes[ordinal + 1];
+    for(int edge_index = first_edge_indexes[ordinal];
+        edge_index < end_edge_index; edge_index += edge_field_length) {
+      int edge_type = edge_util->GetTypeForInt(edge_index, true);
+      if(!IsEssentialEdge_(root_index, edge_type))
+        continue;
+      int child_ordinal = edge_util->GetTargetNode(edge_index, true);
+      affected[ptr->ordinal_to_post_order_index[child_ordinal]] = 1;
+    }
+  }
+  bool changed = true;
+  while(changed) {
+    changed = false;
+    for (int post_order_index = root_post_ordered_index - 1;
+         post_order_index >= 0; --post_order_index) {
+      if (affected[post_order_index] == 0)
+        continue;
+      affected[post_order_index] = 0;
+      if (dominators[post_order_index] == root_post_ordered_index)
+        continue;
+      ordinal = ptr->post_order_index_to_ordinal[post_order_index];
+      int node_flag = flags_[ordinal] & page_object_flag_;
+      int new_dominator_index = no_entry;
+      int begin_retainer_index = first_retainer_index_[ordinal];
+      int end_retainer_index = first_retainer_index_[ordinal + 1];
+      bool orphan_node = true;
+      for (int retainer_index = begin_retainer_index;
+           retainer_index < end_retainer_index; ++retainer_index) {
+        int retainer_edge_index = retaining_edges_[retainer_index];
+        int retainer_edge_type = edge_util->GetTypeForInt(retainer_edge_index, true);
+        int retainer_node_ordinal = retaining_nodes_[retainer_index];
+        if (!IsEssentialEdge_(retainer_node_ordinal, retainer_edge_type))
+          continue;
+        orphan_node = false;
+        int retainer_node_flag = flags_[retainer_node_ordinal] & page_object_flag_;
+        if (retainer_node_ordinal != root_index && node_flag != 0 && retainer_node_flag == 0)
+          continue;
+        int retaner_post_order_index = ptr->ordinal_to_post_order_index[retainer_node_ordinal];
+        if (dominators[retaner_post_order_index] != no_entry) {
+          if (new_dominator_index == no_entry) {
+            new_dominator_index = retaner_post_order_index;
+          } else {
+            while (retaner_post_order_index != new_dominator_index) {
+              while (retaner_post_order_index < new_dominator_index)
+                retaner_post_order_index = dominators[retaner_post_order_index];
+              while (new_dominator_index < retaner_post_order_index)
+                new_dominator_index = dominators[new_dominator_index];
+            }
+          }
+          if (new_dominator_index == root_post_ordered_index)
+            break;
+        }
+      }
+      if (orphan_node)
+        new_dominator_index = root_post_ordered_index;
+      if (new_dominator_index != no_entry && dominators[post_order_index] != new_dominator_index) {
+        dominators[post_order_index] = new_dominator_index;
+        changed = true;
+        ordinal = ptr->post_order_index_to_ordinal[post_order_index];
+        int begin_edge_index = first_edge_indexes[ordinal];
+        int end_edge_index = first_edge_indexes[ordinal + 1];
+        for (int edge_index = begin_edge_index;
+             edge_index < end_edge_index; edge_index += edge_field_length) {
+          int child_ordinal = edge_util->GetTargetNode(edge_index, true);
+          affected[ptr->ordinal_to_post_order_index[child_ordinal]] = 1;
+        }
+      }
+    }
+  }
+  dominator_tree_ = new int[node_count]();
+  for (int post_order_index = 0, l = node_count; post_order_index < l; ++post_order_index) {
+    ordinal = ptr->post_order_index_to_ordinal[post_order_index];
+    dominator_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
+  }
 }
 }
