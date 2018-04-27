@@ -1,5 +1,10 @@
 # <span style="font-family:Menlo;">DevTools X</span>
 
+[![npm version](https://badge.fury.io/js/devtoolx.svg)](https://badge.fury.io/js/devtoolx)
+[![Package Quality](http://npm.packagequality.com/shield/devtoolx.svg)](http://packagequality.com/#?package=devtoolx)
+[![npm](https://img.shields.io/npm/dt/devtoolx.svg)](https://www.npmjs.com/package/devtoolx)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](LICENSE)
+
 <span style="font-family:Menlo;">JavaScript Developer Toolbox</span>
 
 * <span style="font-family:Menlo;">Aid in the analysis of memory</span>
