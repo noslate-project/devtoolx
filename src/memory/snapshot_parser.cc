@@ -214,6 +214,7 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
         }
       }
     }
+    delete[] edges;
     // set user root gc roots -> synthetic roots -> true roots
     // int* sub_root_edges = node_util->GetEdges(gc_roots, false);
     // int sub_root_edge_length = node_util->GetEdgeCount(gc_roots, false);
@@ -262,6 +263,7 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
           }
         }
       }
+      delete[] sub2_root_edges;
       // mark sub gc roots
       if(visit_nodes.count(sub_root_ordinal) == 0) {
         user_root->ordinal = sub_root_ordinal;
@@ -269,6 +271,7 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
         visit_nodes.insert(std::unordered_map<int, bool>::value_type(sub_root_ordinal, true));
       }
     }
+    delete[] sub_root_edges;
     // mark sub roots
     for(int i = 0; i < length; i++) {
       int target_node = edge_util->GetTargetNode(*(edges + i), true);
@@ -304,6 +307,7 @@ void SnapshotParser::BFS_(int* node_to_visit, int node_to_visit_length) {
       node_to_visit[node_to_visit_length++] = child_ordinal;
       temp++;
     }
+    delete[] edges;
   }
   if (node_to_visit_length > node_count) {
     std::string error = "BFS failed. Nodes to visit (" + std::to_string(node_to_visit_length)
