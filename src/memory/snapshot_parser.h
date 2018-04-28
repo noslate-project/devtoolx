@@ -32,6 +32,7 @@ typedef struct {
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
 typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
+typedef std::unordered_map<int, int*> OrderedEdgesMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -51,6 +52,7 @@ public:
   int IsGCRoot(int id);
   void BuildDominatorTree();
   int GetRetainedSize(int id);
+  int* GetSortedEdges(int id);
   json nodes;
   json edges;
   json strings;
@@ -94,8 +96,10 @@ private:
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
-  // ordinal id -> int* (ordered retainers)
+  // ordinal id -> ordered retainers
   OrderedRetainersMap ordered_retainers_map_;
+  // ordinal id -> ordered edges
+  OrderedEdgesMap ordered_edges_map_;
   // total retainers
   int* retaining_nodes_;
   int* retaining_edges_;

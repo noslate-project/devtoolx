@@ -134,9 +134,8 @@ int SnapshotParser::GetRetainersCount(int id) {
 }
 
 snapshot_retainer_t** SnapshotParser::GetRetainers(int id) {
-  if(ordered_retainers_map_.count(id) != 0) {
+  if(ordered_retainers_map_.count(id) != 0)
     return ordered_retainers_map_.at(id);
-  }
   int first_retainer_index = first_retainer_index_[id];
   int next_retainer_index = first_retainer_index_[id + 1];
   int length = static_cast<int>(next_retainer_index - first_retainer_index);
@@ -558,5 +557,21 @@ void SnapshotParser::CalculateRetainedSizes_(snapshot_post_order_t* ptr) {
     int dominator_ordinal = dominator_tree_[ordinal];
     retained_sizes_[dominator_ordinal] += retained_sizes_[ordinal];
   }
+}
+
+int* SnapshotParser::GetSortedEdges(int id) {
+  if(ordered_edges_map_.count(id) != 0)
+    return ordered_edges_map_.at(id);
+  int* edges = node_util->GetEdges(id, false);
+  int length = node_util->GetEdgeCount(id, false);
+  std::sort(edges, edges + length, [this](int lhs, int rhs) {
+    int lhs_ordinal = this->edge_util->GetTargetNode(lhs, true);
+    int lhs_retained_size = this->retained_sizes_[lhs_ordinal];
+    int rhs_ordinal = this->edge_util->GetTargetNode(rhs, true);
+    int rhs_retained_size = this->retained_sizes_[rhs_ordinal];
+    return lhs_retained_size > rhs_retained_size;
+  });
+  ordered_edges_map_.insert(OrderedEdgesMap::value_type(id, edges));
+  return edges;
 }
 }

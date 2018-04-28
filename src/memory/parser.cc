@@ -104,7 +104,7 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   node->Set(Nan::New<String>("is_gcroot").ToLocalChecked(), Nan::New<Number>(is_gcroot));
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
-    int* edges_local = snapshot_parser->node_util->GetEdges(id, false);
+    int* edges_local = snapshot_parser->GetSortedEdges(id);
     int edges_length = snapshot_parser->node_util->GetEdgeCount(id, false);
     int start_edge_index = current;
     int stop_edge_index = current + limit;
