@@ -10,23 +10,26 @@
         limit: Devtoolx.limit
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getAdditional'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
     methods: {
       formatNode(data, edge, raw) {
         raw = raw || {};
         raw.id = data.id;
         raw.key = `${Math.random().toString(36).substr(2)}`;
-        if (!data.name && data.type === 'array') data.name = '[]';
-        if (!data.name && data.type === 'closure') data.name = '()';
-        if (typeof data.name === 'string' && data.name.length > 100) {
+        if (data.type === 'array') data.name = `${data.name || ''}[]`;
+        if (data.type === 'closure') data.name = `${data.name || ''}()`;
+        if (typeof data.name === 'string' && data.name.length > 100)
           raw.name = data.name.substr(0, 100);
-        } else {
+        else
           raw.name = data.name;
-        }
         raw.nameClass = 'node-name';
+        if (data.type === 'closure')
+          raw.nameClass = `${raw.nameClass} closure`;
         raw.address = data.address;
         raw.self_size = data.self_size;
-        raw.additional = `(type: ${data.type}, size: ${this.formatSize(data.retained_size)}, distance: ${data.distance})`;
+        raw.nodeType = data.type;
+        raw.retainedSize = data.retained_size;
+        raw.distance = data.distance;
         raw.edges = data.edges;
         raw.edgesEnd = data.edges_end;
         raw.edgesCurrent = data.edges_current;

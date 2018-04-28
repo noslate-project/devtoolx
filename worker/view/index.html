@@ -21,10 +21,10 @@
         <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
         <p class="content" style="margin-left:20px;height:5px">Edges:</p>
         <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-additional="getAdditional"></tree-edges>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-edges>
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
         <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-additional="getAdditional"></tree-retainers>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-retainers>
     </div>
 </body>
 
@@ -40,8 +40,8 @@
             </span>
             <span :class="node.data.class">
                 <strong :class="node.data.nameClass">{{ node.data.name }}</strong>
-                <strong class="address" :title="getAdditional(node)">{{ node.data.address }}</strong>
-                <small class="additional">{{ node.data.additional }}</small>
+                <strong class="address" :title="getTitle(node)">{{ node.data.address }}</strong>
+                <small class="additional" v-html="getAdditional(node)"></small>
             </span>
             </span>
             <span v-if="node.data.loadMore">

@@ -10,23 +10,26 @@
         limit: Devtoolx.limit
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getAdditional'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
     methods: {
       formatNode(data, retainer, raw) {
         raw = raw || {};
         raw.id = data.id;
         raw.key = `${Math.random().toString(36).substr(2)}`;
-        if (!data.name && data.type === 'array') data.name = '[]';
-        if (!data.name && data.type === 'closure') data.name = '()';
-        if (typeof data.name === 'string' && data.name.length > 100) {
+        if (data.type === 'array') data.name = `${data.name || ''}[]`;
+        if (data.type === 'closure') data.name = `${data.name || ''}()`;
+        if (typeof data.name === 'string' && data.name.length > 100)
           raw.name = data.name.substr(0, 100);
-        } else {
+        else
           raw.name = data.name;
-        }
         raw.nameClass = data.is_gcroot && 'node-name node-gcroot' || 'node-name';
+        if (data.type === 'closure')
+          raw.nameClass = `${raw.nameClass} closure`;
         raw.address = data.address;
         raw.self_size = data.self_size;
-        raw.additional = `(type: ${data.type}, size: ${this.formatSize(data.retained_size)}, distance: ${data.distance})`;
+        raw.nodeType = data.type;
+        raw.retainedSize = data.retained_size;
+        raw.distance = data.distance;
         raw.retainers = data.retainers;
         raw.retainersEnd = data.retainers_end;
         raw.retainersCurrent = data.retainers_current;

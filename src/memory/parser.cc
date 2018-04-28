@@ -299,6 +299,7 @@ void Parser::GetStatistics(const Nan::FunctionCallbackInfo<Value>& info) {
   statistics->Set(Nan::New<String>("node_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->node_count));
   statistics->Set(Nan::New<String>("edge_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->edge_count));
   statistics->Set(Nan::New<String>("gcroots").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->gcroots));
+  statistics->Set(Nan::New<String>("total_size").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->GetRetainedSize(parser->snapshot_parser->root_index)));
   info.GetReturnValue().Set(statistics);
 }
 }
