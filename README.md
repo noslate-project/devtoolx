@@ -38,6 +38,7 @@ devtoolx -s <heapsnapshot file> [-p <port>]
 ### <span style="font-family:Menlo;">Color</span>
 
 * <span style="font-family:Menlo;background:#c0eafd">light bule: means gc root</span>
+* <span style="font-family:Menlo;background:#d20d0d">dark red: means this object's retainedSize / totalSize > 0.2</span>
 
 ### <span style="font-family:Menlo;">Help</span>
 
