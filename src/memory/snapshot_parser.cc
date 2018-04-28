@@ -26,7 +26,7 @@ SnapshotParser::SnapshotParser(json profile) {
   edge_type_offset = IndexOf_(edge_fields, "type");
   edge_name_or_index_offset = IndexOf_(edge_fields, "name_or_index");
   edge_to_node_offset = IndexOf_(edge_fields, "to_node");
-  edge_from_node = new int[edge_count];
+  edge_from_node = new int[edge_count]();
   first_edge_indexes = GetFirstEdgeIndexes_();
   node_util = new snapshot_node::Node(this);
   edge_util = new snapshot_edge::Edge(this);
@@ -51,7 +51,7 @@ void SnapshotParser::FillArray_(int* array, int length, int fill) {
 }
 
 int* SnapshotParser::GetFirstEdgeIndexes_() {
-  int* first_edge_indexes = new int[node_count];
+  int* first_edge_indexes = new int[node_count]();
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
     int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
@@ -84,9 +84,9 @@ int SnapshotParser::SearchOrdinalByAddress(long address) {
 }
 
 void SnapshotParser::BuildTotalRetainer() {
-  retaining_nodes_ = new int[edge_count] {0};
-  retaining_edges_ = new int[edge_count] {0};
-  first_retainer_index_ = new int[node_count + 1] {0};
+  retaining_nodes_ = new int[edge_count]();
+  retaining_edges_ = new int[edge_count]();
+  first_retainer_index_ = new int[node_count + 1]();
   // every node's retainer count
   for(int to_node_field_index = edge_to_node_offset, l = static_cast<int>(edges.size()); to_node_field_index < l; to_node_field_index += edge_field_length) {
     int to_node_index = static_cast<int>(edges[to_node_field_index]);
@@ -321,7 +321,7 @@ void SnapshotParser::BuildDistances() {
   for(int i = 0; i < node_count; i++) {
     *(node_distances_ + i) = NO_DISTANCE;
   }
-  int* node_to_visit = new int[node_count] {0};
+  int* node_to_visit = new int[node_count]();
   int node_to_visit_length = 0;
   // add user root
   snapshot_distance_t* user_root = new snapshot_distance_t;
@@ -370,10 +370,22 @@ bool SnapshotParser::IsEssentialEdge_(int ordinal, int type) {
          (type != snapshot_edge::EdgeTypes::KSHORTCUT || ordinal == root_index);
 }
 
+bool SnapshotParser::HasOnlyWeakRetainers_(int ordinal) {
+  int begin_retainer_index = first_retainer_index_[ordinal];
+  int end_retainer_index = first_retainer_index_[ordinal + 1];
+  for(int retainer_index = begin_retainer_index; retainer_index < end_retainer_index; ++retainer_index) {
+    int retainer_edge_index = retaining_edges_[retainer_index];
+    int retainer_edge_type = edge_util->GetTypeForInt(retainer_edge_index, true);
+    if (retainer_edge_type != snapshot_edge::EdgeTypes::KWEAK
+        && retainer_edge_type != snapshot_edge::EdgeTypes::KSHORTCUT)
+      return false;
+  }
+  return true;
+}
+
 void SnapshotParser::CalculateFlags_() {
-  flags_ = new int[node_count];
-  FillArray_(flags_, node_count, 0);
-  int* node_to_visit = new int[node_count];
+  flags_ = new int[node_count]();
+  int* node_to_visit = new int[node_count]();
   int node_to_visit_length = 0;
   for(int edge_index = first_edge_indexes[root_index],
       end_edge_index = first_edge_indexes[root_index + 1];
@@ -412,8 +424,8 @@ void SnapshotParser::CalculateFlags_() {
 }
 
 snapshot_post_order_t* SnapshotParser::BuildPostOrderIndex_() {
-  int* stack_nodes = new int[node_count];
-  int* stack_current_edge = new int[node_count];
+  int* stack_nodes = new int[node_count]();
+  int* stack_current_edge = new int[node_count]();
   int* post_order_index_to_ordinal = new int[node_count]();
   int* ordinal_to_post_order_index = new int[node_count]();
   int* visited = new int[node_count]();
@@ -454,9 +466,31 @@ snapshot_post_order_t* SnapshotParser::BuildPostOrderIndex_() {
         --stack_top;
       }
     }
-    // TODO: may be have some unreachable object fromm root_index, can give warnings
     if (post_order_index == node_count || iteration > 1)
       break;
+    // may be have some unreachable object fromm root_index, can give warnings
+    --post_order_index;
+    stack_top = 0;
+    stack_nodes[0] = root_index;
+    stack_current_edge[0] = first_edge_indexes[root_index + 1];
+    for (int i = 0; i < node_count; ++i) {
+      if (visited[i] == 1 || !HasOnlyWeakRetainers_(i))
+        continue;
+      stack_nodes[++stack_top] = i;
+      stack_current_edge[stack_top] = first_edge_indexes[i];
+      visited[i] = 1;
+    }
+  }
+  if (post_order_index != node_count) {
+    --post_order_index;
+    for (int i = 0; i < node_count; ++i) {
+      if (visited[i] == 1)
+        continue;
+      ordinal_to_post_order_index[i] = post_order_index;
+      post_order_index_to_ordinal[post_order_index++] = i;
+    }
+    ordinal_to_post_order_index[root_index] = post_order_index;
+    post_order_index_to_ordinal[post_order_index++] = root_index;
   }
   // return struct
   snapshot_post_order_t* ptr = new snapshot_post_order_t;
@@ -468,7 +502,7 @@ snapshot_post_order_t* SnapshotParser::BuildPostOrderIndex_() {
 void SnapshotParser::BuildDominatorTree_(snapshot_post_order_t* ptr) {
   int root_post_ordered_index = node_count - 1;
   int no_entry = node_count;
-  int* dominators = new int[node_count]();
+  int* dominators = new int[node_count];
   for (int i = 0; i < root_post_ordered_index; ++i)
     dominators[i] = no_entry;
   dominators[root_post_ordered_index] = root_post_ordered_index;

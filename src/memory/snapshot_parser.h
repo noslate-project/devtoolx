@@ -92,6 +92,7 @@ private:
   void BuildDominatorTree_(snapshot_post_order_t* ptr);
   void CalculateRetainedSizes_(snapshot_post_order_t* ptr);
   bool IsEssentialEdge_(int ordinal, int type);
+  bool HasOnlyWeakRetainers_(int ordinal);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
