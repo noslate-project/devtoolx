@@ -24,9 +24,15 @@ typedef struct {
   int edge;
 } snapshot_retainer_t;
 
+typedef struct {
+  int* post_order_index_to_ordinal;
+  int* ordinal_to_post_order_index;
+} snapshot_post_order_t;
+
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
 typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
+typedef std::unordered_map<int, int*> OrderedEdgesMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -44,7 +50,9 @@ public:
   void BuildDistances();
   int GetDistance(int id);
   int IsGCRoot(int id);
-  static int IndexOf(json array, std::string target);
+  void BuildDominatorTree();
+  int GetRetainedSize(int id);
+  int* GetSortedEdges(int id);
   json nodes;
   json edges;
   json strings;
@@ -77,17 +85,36 @@ private:
   void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
   void BFS_(int* node_to_visit, int node_to_visit_length);
   bool Filter_(int ordinal, int edge);
+  static void FillArray_(int* array, int length, int fill);
+  void CalculateFlags_();
+  static int IndexOf_(json array, std::string target);
+  snapshot_post_order_t* BuildPostOrderIndex_();
+  void BuildDominatorTree_(snapshot_post_order_t* ptr);
+  void CalculateRetainedSizes_(snapshot_post_order_t* ptr);
+  bool IsEssentialEdge_(int ordinal, int type);
+  bool HasOnlyWeakRetainers_(int ordinal);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
-  // ordinal id -> int* (ordered retainers)
+  // ordinal id -> ordered retainers
   OrderedRetainersMap ordered_retainers_map_;
+  // ordinal id -> ordered edges
+  OrderedEdgesMap ordered_edges_map_;
   // total retainers
   int* retaining_nodes_;
   int* retaining_edges_;
   int* first_retainer_index_;
+  // distances
   int* node_distances_;
+  // paged object flags
+  int* flags_;
+  // detached dom flag & queried object flag are temporarily ignored
+  int page_object_flag_ = 4;
+  // dominator tree
+  int* dominator_tree_;
+  // retained sizes
+  int* retained_sizes_;
 };
 }
 

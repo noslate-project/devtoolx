@@ -1,5 +1,6 @@
 (function () {
   Devtoolx.limit = 25;
+  Devtoolx.ratioLimit = 0.2;
   new Vue({
     el: '#app',
     components: {
@@ -11,7 +12,7 @@
         address: '',
         rootid: 0,
         nodeData: {},
-        statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-' }
+        statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-', totalSize: 0 }
       }
     },
     mounted() {
@@ -20,6 +21,7 @@
         vm.$set(vm.statistics, 'nodeCount', data.node_count || '-');
         vm.$set(vm.statistics, 'edgeCount', data.edge_count || '-');
         vm.$set(vm.statistics, 'gcRoots', data.gcroots || '-');
+        vm.$set(vm.statistics, 'totalSize', data.total_size || 0);
       }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
     },
     methods: {
@@ -71,8 +73,20 @@
       getEdgeType(node) {
         return node.data.edgeType;
       },
-      getNodeId(node) {
-        return `id: ${node.data.id}`
+      getTitle(node) {
+        return `id: ${node.data.id}, self_size: ${this.formatSize(node.data.self_size)}`
+      },
+      getAdditional(node) {
+        var data = node.data;
+        var retainedSize = `size: ${this.formatSize(data.retainedSize)}`;
+        if (this.totalSize && data.retainedSize / this.totalSize > Devtoolx.ratioLimit)
+          retainedSize = `<strong style="color:#d20d0d">${retainedSize}</strong>`;
+        return `(type: ${data.nodeType}, ${retainedSize}, distance: ${data.distance})`;
+      }
+    },
+    computed: {
+      totalSize() {
+        return this.statistics.totalSize;
       }
     }
   })

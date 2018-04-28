@@ -28,6 +28,10 @@
   color: rgb(48, 57, 66);
 }
 
+.closure {
+  font-style: italic;
+}
+
 .node-gcroot {
   background-color: #c0eafd;
 }

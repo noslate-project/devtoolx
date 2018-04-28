@@ -80,6 +80,7 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
       parser->snapshot_parser->CreateAddressMap();
       parser->snapshot_parser->BuildTotalRetainer();
       parser->snapshot_parser->BuildDistances();
+      parser->snapshot_parser->BuildDominatorTree();
     }
   }
 }
@@ -95,13 +96,15 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
   int self_size = snapshot_parser->node_util->GetSelfSize(id, false);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
+  int retained_size = snapshot_parser->GetRetainedSize(id);
+  node->Set(Nan::New<String>("retained_size").ToLocalChecked(), Nan::New<Number>(retained_size));
   int distance = snapshot_parser->GetDistance(id);
   node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
   bool is_gcroot = snapshot_parser->IsGCRoot(id);
   node->Set(Nan::New<String>("is_gcroot").ToLocalChecked(), Nan::New<Number>(is_gcroot));
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
-    int* edges_local = snapshot_parser->node_util->GetEdges(id, false);
+    int* edges_local = snapshot_parser->GetSortedEdges(id);
     int edges_length = snapshot_parser->node_util->GetEdgeCount(id, false);
     int start_edge_index = current;
     int stop_edge_index = current + limit;
@@ -296,6 +299,7 @@ void Parser::GetStatistics(const Nan::FunctionCallbackInfo<Value>& info) {
   statistics->Set(Nan::New<String>("node_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->node_count));
   statistics->Set(Nan::New<String>("edge_count").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->edge_count));
   statistics->Set(Nan::New<String>("gcroots").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->gcroots));
+  statistics->Set(Nan::New<String>("total_size").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->GetRetainedSize(parser->snapshot_parser->root_index)));
   info.GetReturnValue().Set(statistics);
 }
 }
