@@ -71,8 +71,8 @@
       getEdgeType(node) {
         return node.data.edgeType;
       },
-      getNodeId(node) {
-        return `id: ${node.data.id}`
+      getAdditional(node) {
+        return `id: ${node.data.id}, self_size: ${this.formatSize(node.data.self_size)}`
       }
     }
   })

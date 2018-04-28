@@ -50,6 +50,7 @@ public:
   int GetDistance(int id);
   int IsGCRoot(int id);
   void BuildDominatorTree();
+  int GetRetainedSize(int id);
   json nodes;
   json edges;
   json strings;
@@ -87,6 +88,7 @@ private:
   static int IndexOf_(json array, std::string target);
   snapshot_post_order_t* BuildPostOrderIndex_();
   void BuildDominatorTree_(snapshot_post_order_t* ptr);
+  void CalculateRetainedSizes_(snapshot_post_order_t* ptr);
   bool IsEssentialEdge_(int ordinal, int type);
   // address -> node ordinal id
   AddressMap address_map_;
@@ -106,6 +108,8 @@ private:
   int page_object_flag_ = 4;
   // dominator tree
   int* dominator_tree_;
+  // retained sizes
+  int* retained_sizes_;
 };
 }
 

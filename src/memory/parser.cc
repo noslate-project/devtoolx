@@ -96,6 +96,8 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
   int self_size = snapshot_parser->node_util->GetSelfSize(id, false);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
+  int retained_size = snapshot_parser->GetRetainedSize(id);
+  node->Set(Nan::New<String>("retained_size").ToLocalChecked(), Nan::New<Number>(retained_size));
   int distance = snapshot_parser->GetDistance(id);
   node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
   bool is_gcroot = snapshot_parser->IsGCRoot(id);

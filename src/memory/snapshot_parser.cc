@@ -336,6 +336,10 @@ void SnapshotParser::BuildDistances() {
   user_root = nullptr;
 }
 
+int SnapshotParser::GetRetainedSize(int id) {
+  return retained_sizes_[id];
+}
+
 int SnapshotParser::GetDistance(int id) {
   return node_distances_[id];
 }
@@ -351,6 +355,11 @@ void SnapshotParser::BuildDominatorTree() {
   CalculateFlags_();
   snapshot_post_order_t* ptr = BuildPostOrderIndex_();
   BuildDominatorTree_(ptr);
+  CalculateRetainedSizes_(ptr);
+  // free memory
+  // delete[] ptr->post_order_index_to_ordinal;
+  // delete[] ptr->ordinal_to_post_order_index;
+  // delete ptr;
 }
 
 bool SnapshotParser::IsEssentialEdge_(int ordinal, int type) {
@@ -537,6 +546,17 @@ void SnapshotParser::BuildDominatorTree_(snapshot_post_order_t* ptr) {
   for (int post_order_index = 0, l = node_count; post_order_index < l; ++post_order_index) {
     ordinal = ptr->post_order_index_to_ordinal[post_order_index];
     dominator_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
+  }
+}
+
+void SnapshotParser::CalculateRetainedSizes_(snapshot_post_order_t* ptr) {
+  retained_sizes_ = new int[node_count]();
+  for (int ordinal = 0; ordinal < node_count; ++ordinal)
+    retained_sizes_[ordinal] = node_util->GetSelfSize(ordinal, false);
+  for (int post_order_index = 0; post_order_index < node_count - 1; ++post_order_index) {
+    int ordinal = ptr->post_order_index_to_ordinal[post_order_index];
+    int dominator_ordinal = dominator_tree_[ordinal];
+    retained_sizes_[dominator_ordinal] += retained_sizes_[ordinal];
   }
 }
 }

@@ -10,7 +10,7 @@
         limit: Devtoolx.limit
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getNodeId'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getAdditional'],
     methods: {
       formatNode(data, retainer, raw) {
         raw = raw || {};
@@ -25,7 +25,8 @@
         }
         raw.nameClass = data.is_gcroot && 'node-name node-gcroot' || 'node-name';
         raw.address = data.address;
-        raw.additional = `(type: ${data.type}, self_size: ${this.formatSize(data.self_size)}, distance: ${data.distance})`;
+        raw.self_size = data.self_size;
+        raw.additional = `(type: ${data.type}, size: ${this.formatSize(data.retained_size)}, distance: ${data.distance})`;
         raw.retainers = data.retainers;
         raw.retainersEnd = data.retainers_end;
         raw.retainersCurrent = data.retainers_current;
