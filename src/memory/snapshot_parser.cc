@@ -360,9 +360,9 @@ void SnapshotParser::BuildDominatorTree() {
   BuildDominatorTree_(ptr);
   CalculateRetainedSizes_(ptr);
   // free memory
-  // delete[] ptr->post_order_index_to_ordinal;
-  // delete[] ptr->ordinal_to_post_order_index;
-  // delete ptr;
+  delete[] ptr->post_order_index_to_ordinal;
+  delete[] ptr->ordinal_to_post_order_index;
+  delete ptr;
 }
 
 bool SnapshotParser::IsEssentialEdge_(int ordinal, int type) {
@@ -579,10 +579,10 @@ void SnapshotParser::BuildDominatorTree_(snapshot_post_order_t* ptr) {
       }
     }
   }
-  dominator_tree_ = new int[node_count]();
+  dominators_tree_ = new int[node_count]();
   for (int post_order_index = 0, l = node_count; post_order_index < l; ++post_order_index) {
     ordinal = ptr->post_order_index_to_ordinal[post_order_index];
-    dominator_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
+    dominators_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
   }
 }
 
@@ -592,7 +592,8 @@ void SnapshotParser::CalculateRetainedSizes_(snapshot_post_order_t* ptr) {
     retained_sizes_[ordinal] = node_util->GetSelfSize(ordinal, false);
   for (int post_order_index = 0; post_order_index < node_count - 1; ++post_order_index) {
     int ordinal = ptr->post_order_index_to_ordinal[post_order_index];
-    int dominator_ordinal = dominator_tree_[ordinal];
+    // dominator_ordinal immediately dominated ordinal
+    int dominator_ordinal = dominators_tree_[ordinal];
     retained_sizes_[dominator_ordinal] += retained_sizes_[ordinal];
   }
 }
@@ -611,5 +612,31 @@ int* SnapshotParser::GetSortedEdges(int id) {
   });
   ordered_edges_map_.insert(OrderedEdgesMap::value_type(id, edges));
   return edges;
+}
+
+snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
+  if(ordered_dominates_map_.count(id) != 0) {
+    return ordered_dominates_map_.at(id);
+  }
+  snapshot_dominates_t* doms = new snapshot_dominates_t;
+  int length = 0;
+  for(int ordinal = 0; ordinal < node_count; ordinal++) {
+    if(ordinal != root_index &&  dominators_tree_[ordinal] == id)
+      length++;
+  }
+  doms->length = length;
+  int* dominates = new int[length];
+  for(int ordinal = 0; ordinal < node_count; ordinal++) {
+    if(ordinal != root_index &&  dominators_tree_[ordinal] == id)
+      dominates[--length] = ordinal;
+  }
+  std::sort(dominates, dominates + doms->length, [this](int lhs, int rhs) {
+    int lhs_retained_size = this->retained_sizes_[lhs];
+    int rhs_retained_size = this->retained_sizes_[rhs];
+    return lhs_retained_size > rhs_retained_size;
+  });
+  doms->dominates = dominates;
+  ordered_dominates_map_.insert(OrderedDominatesMap::value_type(id, doms));
+  return doms;
 }
 }

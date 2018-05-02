@@ -25,6 +25,9 @@
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
         <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
             :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-retainers>
+        <p class="content" style="margin-left:20px;height:5px;margin-top:20px">DominatorsTree:</p>
+        <tree-dominators style="margin-left:15px" :get-node="getNode" :format-size="formatSize" :get-edge-type="getEdgeType" :get-title="getTitle"
+            :get-additional="getAdditional"></tree-dominators>
     </div>
 </body>
 
@@ -51,8 +54,10 @@
                 <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit * 4)" :loading="loadMoreStatus.b2">
                     +{{ limit * 4 }}
                 </el-button>
-                <el-button plain size="small" class="more-button" @click="loadMore(node, data, node.data.edgesLeft || node.data.retainersLeft)" :loading="loadMoreStatus.b3">
-                    + left {{ node.data.edgesLeft || node.data.retainersLeft }}
+                <el-button plain size="small" class="more-button" 
+                @click="loadMore(node, data, node.data.edgesLeft || node.data.retainersLeft || node.data.dominatesLeft)" 
+                :loading="loadMoreStatus.b3">
+                    + left {{ node.data.edgesLeft || node.data.retainersLeft || node.data.dominatesLeft }}
                 </el-button>
             </span>
             </span>
@@ -65,6 +70,7 @@
 <script src="/js/library/axios.min.js"></script>
 <script src="/js/dashboard/component/tree_edges.js"></script>
 <script src="/js/dashboard/component/tree_retainers.js"></script>
+<script src="/js/dashboard/component/tree_dominators.js"></script>
 <script src="/js/dashboard/index.js"></script>
 
 </html>

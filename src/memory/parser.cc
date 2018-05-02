@@ -12,6 +12,7 @@ using v8::Array;
 using v8::Number;
 using v8::Boolean;
 using snapshot_parser::snapshot_retainer_t;
+using snapshot_parser::snapshot_dominates_t;
 
 Nan::Persistent<Function> Parser::constructor;
 
@@ -35,6 +36,7 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getNodeByAddress", GetNodeByAddress);
   Nan::SetPrototypeMethod(tpl, "getNodeIdByAddress", GetNodeIdByAddress);
   Nan::SetPrototypeMethod(tpl, "getStatistics", GetStatistics);
+  Nan::SetPrototypeMethod(tpl, "getDominatorByIDom", GetDominatorByIDom);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
@@ -85,7 +87,7 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
   }
 }
 
-Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes get_node_type) {
+Local<Object> Parser::SetNormalInfo_(int id) {
   Local<Object> node = Nan::New<Object>();
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
   std::string type = snapshot_parser->node_util->GetType(id, false);
@@ -102,6 +104,11 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
   bool is_gcroot = snapshot_parser->IsGCRoot(id);
   node->Set(Nan::New<String>("is_gcroot").ToLocalChecked(), Nan::New<Number>(is_gcroot));
+  return node;
+}
+
+Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes get_node_type) {
+  Local<Object> node = SetNormalInfo_(id);
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
     int* edges_local = snapshot_parser->GetSortedEdges(id);
@@ -301,5 +308,43 @@ void Parser::GetStatistics(const Nan::FunctionCallbackInfo<Value>& info) {
   statistics->Set(Nan::New<String>("gcroots").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->gcroots));
   statistics->Set(Nan::New<String>("total_size").ToLocalChecked(), Nan::New<Number>(parser->snapshot_parser->GetRetainedSize(parser->snapshot_parser->root_index)));
   info.GetReturnValue().Set(statistics);
+}
+
+void Parser::GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+  if(!info[0]->IsNumber()) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 must be number!").ToLocalChecked());
+    return;
+  }
+  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  snapshot_dominates_t* ptr =
+    parser->snapshot_parser->GetSortedDominates(info[0]->ToInteger()->Value());
+  int current = 0;
+  if(info[1]->IsNumber())
+    current = static_cast<int>(info[1]->ToInteger()->Value());
+  int limit = 0;
+  if(info[2]->IsNumber())
+    limit = static_cast<int>(info[2]->ToInteger()->Value());
+  else
+    limit = ptr->length;
+  if(current >= ptr->length)
+    current = ptr->length;
+  int end = current + limit;
+  if(end >= ptr->length)
+    end = ptr->length;
+  Local<Array> dominates = Nan::New<Array>(end - current);
+  for(int i = current; i < end; i++) {
+    int id = *(ptr->dominates + i);
+    Local<Object> node = parser->SetNormalInfo_(id);
+    dominates->Set((i - current), node);
+  }
+  Local<Object> result = Nan::New<Object>();
+  result->Set(Nan::New<String>("dominates").ToLocalChecked(), dominates);
+  if(end < ptr->length) {
+    result->Set(Nan::New<String>("dominates_end").ToLocalChecked(), Nan::New<Boolean>(false));
+    result->Set(Nan::New<String>("dominates_current").ToLocalChecked(), Nan::New<Number>(end));
+    result->Set(Nan::New<String>("dominates_left").ToLocalChecked(), Nan::New<Number>(ptr->length - end));
+  } else
+    result->Set(Nan::New<String>("dominates_end").ToLocalChecked(), Nan::New<Boolean>(true));
+  info.GetReturnValue().Set(result);
 }
 }

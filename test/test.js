@@ -10,14 +10,15 @@ function getNode() {
   parser.parse({ mode: 'search' });
 
   // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2)
-  let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2, { type: 'retainers' })
+  // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2, { type: 'retainers' })
   // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2)
+  let nodes = parser.getDominatorByIDom(0, 2, 1);
 
-  console.log(node);
+  console.log(nodes, nodes.length);
 }
 
 
-// getNode();
+getNode();
 
 console.time('cost');
-require('..').snapshot(snapshot).listen(3001, () => console.timeEnd('cost'));
+// require('..').snapshot(snapshot).listen(3001, () => console.timeEnd('cost'));

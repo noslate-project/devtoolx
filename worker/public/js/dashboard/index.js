@@ -5,7 +5,8 @@
     el: '#app',
     components: {
       'tree-edges': Devtoolx.TreeEdges,
-      'tree-retainers': Devtoolx.TreeRetainers
+      'tree-retainers': Devtoolx.TreeRetainers,
+      'tree-dominators': Devtoolx.TreeDominators
     },
     data: function () {
       return {

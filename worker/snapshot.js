@@ -60,6 +60,18 @@ function createServer(snapshot) {
     }
   });
 
+  app.get('/dominates/:id', (req, res) => {
+    try {
+      let id = parseInt(req.params.id);
+      let current = !isNaN(req.query.current) && parseInt(req.query.current);
+      let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
+      let dominates = parser.getDominatorByIDom(id, current, limit);
+      res.json({ ok: true, data: dominates });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
   return app;
 }
 
