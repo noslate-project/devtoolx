@@ -3,6 +3,7 @@
     template: '#tree-template',
     data() {
       return {
+        type: 'dominators',
         props: { label: 'name', isLeaf: 'exists' },
         loadMoreStatus: { b1: false, b2: false, b3: false },
         limit: Devtoolx.limit
@@ -29,6 +30,17 @@
         raw.nodeType = data.type;
         raw.retainedSize = data.retained_size;
         raw.distance = data.distance;
+        if (data.edge_name_or_index) {
+          var edgeType = data.edge_type;
+          if (edgeType === 'property' || edgeType === 'element' || edgeType === 'shortcut') {
+            raw.edgeClass = 'property';
+          }
+          if (edgeType === 'context') {
+            raw.edgeClass = 'context';
+          }
+          raw.fromEdge = data.edge_name_or_index || '';
+          raw.edgeType = edgeType;
+        }
         return raw;
       },
       loadNode(node, resolve) {

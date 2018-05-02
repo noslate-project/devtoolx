@@ -625,18 +625,34 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
       length++;
   }
   doms->length = length;
-  int* dominates = new int[length];
+  snapshot_dominate_t** dominates = new snapshot_dominate_t*[length];
   for(int ordinal = 0; ordinal < node_count; ordinal++) {
-    if(ordinal != root_index &&  dominators_tree_[ordinal] == id)
-      dominates[--length] = ordinal;
+    if(ordinal != root_index &&  dominators_tree_[ordinal] == id) {
+      snapshot_dominate_t* dominate = new snapshot_dominate_t;
+      dominate->dominate = ordinal;
+      // if(node_distances_[ordinal] == node_distances_[id] + 1)
+      dominate->edge = GetEdgeByParentAndChild_(id, ordinal);
+      dominates[--length] = dominate;
+    }
   }
-  std::sort(dominates, dominates + doms->length, [this](int lhs, int rhs) {
-    int lhs_retained_size = this->retained_sizes_[lhs];
-    int rhs_retained_size = this->retained_sizes_[rhs];
+  std::sort(dominates, dominates + doms->length, [this](snapshot_dominate_t* lhs, snapshot_dominate_t* rhs) {
+    int lhs_retained_size = this->retained_sizes_[lhs->dominate];
+    int rhs_retained_size = this->retained_sizes_[rhs->dominate];
     return lhs_retained_size > rhs_retained_size;
   });
   doms->dominates = dominates;
   ordered_dominates_map_.insert(OrderedDominatesMap::value_type(id, doms));
   return doms;
+}
+
+int SnapshotParser::GetEdgeByParentAndChild_(int parent, int child) {
+  int* edges = node_util->GetEdges(parent, false);
+  int length = node_util->GetEdgeCount(parent, false);
+  for(int i = 0; i < length; i++) {
+    int child_ordinal = edge_util->GetTargetNode(edges[i], true);
+    if(child_ordinal == child)
+      return edges[i];
+  }
+  return -1;
 }
 }

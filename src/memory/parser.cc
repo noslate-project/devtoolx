@@ -13,6 +13,7 @@ using v8::Number;
 using v8::Boolean;
 using snapshot_parser::snapshot_retainer_t;
 using snapshot_parser::snapshot_dominates_t;
+using snapshot_parser::snapshot_dominate_t;
 
 Nan::Persistent<Function> Parser::constructor;
 
@@ -333,8 +334,15 @@ void Parser::GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info
     end = ptr->length;
   Local<Array> dominates = Nan::New<Array>(end - current);
   for(int i = current; i < end; i++) {
-    int id = *(ptr->dominates + i);
+    snapshot_dominate_t* sdom = *(ptr->dominates + i);
+    int id = sdom->dominate;
     Local<Object> node = parser->SetNormalInfo_(id);
+    if(sdom->edge != -1) {
+      std::string edge_name_or_index = parser->snapshot_parser->edge_util->GetNameOrIndex(sdom->edge, true);
+      node->Set(Nan::New<String>("edge_name_or_index").ToLocalChecked(), Nan::New<String>(edge_name_or_index).ToLocalChecked());
+      std::string edge_type = parser->snapshot_parser->edge_util->GetType(sdom->edge, true);
+      node->Set(Nan::New<String>("edge_type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
+    }
     dominates->Set((i - current), node);
   }
   Local<Object> result = Nan::New<Object>();

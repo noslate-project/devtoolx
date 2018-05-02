@@ -30,7 +30,12 @@ typedef struct {
 } snapshot_post_order_t;
 
 typedef struct {
-  int* dominates;
+  int dominate;
+  int edge;
+} snapshot_dominate_t;
+
+typedef struct {
+  snapshot_dominate_t** dominates;
   int length;
 } snapshot_dominates_t;
 
@@ -100,6 +105,7 @@ private:
   void CalculateRetainedSizes_(snapshot_post_order_t* ptr);
   bool IsEssentialEdge_(int ordinal, int type);
   bool HasOnlyWeakRetainers_(int ordinal);
+  int GetEdgeByParentAndChild_(int parent, int child);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool

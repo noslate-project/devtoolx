@@ -38,7 +38,7 @@
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
                 <strong :class="node.data.edgeClass" :title="getEdgeType(node)">{{ node.data.fromEdge }}</strong>
-                <small v-if="type === 'edges'" class="address">::</small>
+                <small v-if="type === 'edges' || type === 'dominators'" class="address">::</small>
                 <strong v-if="type === 'retainers'" class="address">in</strong>
             </span>
             <span :class="node.data.class">
