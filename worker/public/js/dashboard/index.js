@@ -79,9 +79,17 @@
       },
       getAdditional(node) {
         var data = node.data;
-        var retainedSize = `size: ${this.formatSize(data.retainedSize)}`;
+        var retainedSizeSource = `size: ${this.formatSize(data.retainedSize)}`;
+        var retainedSize = retainedSizeSource;
+        var parentRetainedSize = node.parent && node.parent && node.parent.data && node.parent.data.retainedSize;
+        var childNodes = node.parent && node.parent && node.parent.childNodes;
+        var childNodesRetainedSizes = childNodes.reduce((t, n) => t += n.data && n.data.idomed && n.data.retainedSize || 0, 0);
         if (this.totalSize && data.retainedSize / this.totalSize > Devtoolx.ratioLimit)
-          retainedSize = `<strong style="color:#d20d0d">${retainedSize}</strong>`;
+          retainedSize = `<strong style="color:#d20d0d">${retainedSizeSource}</strong>`;
+        else if (this.totalSize && data.idomed && parentRetainedSize / this.totalSize > Devtoolx.ratioLimit
+          && childNodesRetainedSizes / this.totalSize > Devtoolx.ratioLimit
+          && data.retainedSize >= (parentRetainedSize / childNodes.length))
+          retainedSize = `<strong style="color:#ff9800;font-style:italic;">${retainedSizeSource}</strong>`;
         return `(type: ${data.nodeType}, ${retainedSize}, distance: ${data.distance})`;
       }
     },

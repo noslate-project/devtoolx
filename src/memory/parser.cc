@@ -128,9 +128,12 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       std::string edge_type = snapshot_parser->edge_util->GetType(edges_local[i], true);
       std::string name_or_index = snapshot_parser->edge_util->GetNameOrIndex(edges_local[i], true);
       int to_node = snapshot_parser->edge_util->GetTargetNode(edges_local[i], true);
+      int dominator = snapshot_parser->GetImmediateDominator(to_node);
+      bool idomed = dominator == id;
       edge->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
       edge->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       edge->Set(Nan::New<String>("to_node").ToLocalChecked(), Nan::New<Number>(to_node));
+      edge->Set(Nan::New<String>("idomed").ToLocalChecked(), Nan::New<Boolean>(idomed));
       edges->Set((i - start_edge_index), edge);
     }
     if(stop_edge_index < edges_length) {

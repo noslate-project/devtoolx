@@ -655,4 +655,10 @@ int SnapshotParser::GetEdgeByParentAndChild_(int parent, int child) {
   }
   return -1;
 }
+
+int SnapshotParser::GetImmediateDominator(int id) {
+  if(id >= node_count)
+    return -1;
+  return dominators_tree_[id];
+}
 }

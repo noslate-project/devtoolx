@@ -65,6 +65,7 @@ public:
   int GetRetainedSize(int id);
   int* GetSortedEdges(int id);
   snapshot_dominates_t* GetSortedDominates(int id);
+  int GetImmediateDominator(int id);
   json nodes;
   json edges;
   json strings;

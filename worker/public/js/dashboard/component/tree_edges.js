@@ -46,6 +46,7 @@
           }
           raw.fromEdge = `${edge.name_or_index}`;
           raw.edgeType = edge.type;
+          raw.idomed = edge.idomed;
         }
         return raw;
       },

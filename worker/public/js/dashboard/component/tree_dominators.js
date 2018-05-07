@@ -41,6 +41,7 @@
           raw.fromEdge = data.edge_name_or_index || '';
           raw.edgeType = edgeType;
         }
+        raw.idomed = true;
         return raw;
       },
       loadNode(node, resolve) {
