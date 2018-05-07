@@ -68,3 +68,8 @@
 .statistics-value{
   color: #d20d0d;
 }
+
+.tooltip-menu {
+  margin-left: 10px;
+  margin-right: 10px;
+}

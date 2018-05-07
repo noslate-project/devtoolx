@@ -7,10 +7,12 @@
         node: {},
         type: 'edges',
         loadMoreStatus: { b1: false, b2: false, b3: false },
-        limit: Devtoolx.limit
+        limit: Devtoolx.limit,
+        tooltipType: 'normal'
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle',
+      'getAdditional', 'contextmenu', 'tooltipStyle', 'nodeClick', 'tooltipData'],
     methods: {
       formatNode(data, edge, raw) {
         raw = raw || {};
@@ -47,6 +49,7 @@
           raw.fromEdge = `${edge.name_or_index}`;
           raw.edgeType = edge.type;
           raw.idomed = edge.idomed;
+          raw.dominatesCount = data.dominates_count;
         }
         return raw;
       },

@@ -38,15 +38,15 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getNodeIdByAddress", GetNodeIdByAddress);
   Nan::SetPrototypeMethod(tpl, "getStatistics", GetStatistics);
   Nan::SetPrototypeMethod(tpl, "getDominatorByIDom", GetDominatorByIDom);
+  Nan::SetPrototypeMethod(tpl, "getChildRepeat", GetChildRepeat);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
 }
 
 void Parser::New(const Nan::FunctionCallbackInfo<Value>& info) {
-  int argumentLength = info.Length();
-  if(argumentLength < 1) {
-    printf("constrctor arguments must >= 1");
+  if(!info[0]->IsString()) {
+    Nan::ThrowTypeError(Nan::New<String>("constrctor arguments 0 must be string!").ToLocalChecked());
     info.GetReturnValue().Set(Nan::Undefined());
     return;
   }
@@ -105,6 +105,8 @@ Local<Object> Parser::SetNormalInfo_(int id) {
   node->Set(Nan::New<String>("distance").ToLocalChecked(), Nan::New<Number>(distance));
   bool is_gcroot = snapshot_parser->IsGCRoot(id);
   node->Set(Nan::New<String>("is_gcroot").ToLocalChecked(), Nan::New<Number>(is_gcroot));
+  snapshot_dominates_t* dominates = snapshot_parser->GetSortedDominates(id);
+  node->Set(Nan::New<String>("dominates_count").ToLocalChecked(), Nan::New<Number>(dominates->length));
   return node;
 }
 
@@ -356,6 +358,65 @@ void Parser::GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info
     result->Set(Nan::New<String>("dominates_left").ToLocalChecked(), Nan::New<Number>(ptr->length - end));
   } else
     result->Set(Nan::New<String>("dominates_end").ToLocalChecked(), Nan::New<Boolean>(true));
+  info.GetReturnValue().Set(result);
+}
+
+void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+  if(!info[0]->IsNumber() || !info[1]->IsNumber()) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 & 1 must be number!").ToLocalChecked());
+    return;
+  }
+  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  int parent_id = info[0]->ToInteger()->Value();
+  int child_id = info[1]->ToInteger()->Value();
+  // std::string child_name = parser->snapshot_parser->node_util->GetName(child_id, false);
+  int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id, false);
+  int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id, false);
+  int child_distance = parser->snapshot_parser->GetDistance(child_id);
+  // search
+  int count = 0;
+  int total_retained_size = 0;
+  bool done = false;
+  if(info[2]->IsString()) {
+    Nan::Utf8String type(info[2]->ToString());
+    std::string dominates_type = "dominates";
+    if(strcmp(dominates_type.c_str(), *type) == 0) {
+      done = true;
+      snapshot_dominates_t* ptr = parser->snapshot_parser->GetSortedDominates(parent_id);
+      int childs_length = ptr->length;
+      snapshot_dominate_t** childs = ptr->dominates;
+      for(int i = 0; i < childs_length; i++) {
+        snapshot_dominate_t* child = *(childs + i);
+        int target_node = child->dominate;
+        int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
+        int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
+        int distance = parser->snapshot_parser->GetDistance(target_node);
+        if(name == child_name && self_size == child_self_size
+            && child_distance == distance) {
+          count++;
+          total_retained_size += parser->snapshot_parser->GetRetainedSize(target_node);
+        }
+      }
+    }
+  }
+  if(!done) {
+    int childs_length = parser->snapshot_parser->node_util->GetEdgeCount(parent_id, false);
+    int* childs = parser->snapshot_parser->GetSortedEdges(parent_id);
+    for(int i = 0; i < childs_length; i++) {
+      int target_node = parser->snapshot_parser->edge_util->GetTargetNode(*(childs + i), true);
+      int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
+      int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
+      int distance = parser->snapshot_parser->GetDistance(target_node);
+      if(name == child_name && self_size == child_self_size
+          && child_distance == distance) {
+        count++;
+        total_retained_size += parser->snapshot_parser->GetRetainedSize(target_node);
+      }
+    }
+  }
+  Local<Object> result = Nan::New<Object>();
+  result->Set(Nan::New<String>("count").ToLocalChecked(), Nan::New<Number>(count));
+  result->Set(Nan::New<String>("total_retained_size").ToLocalChecked(), Nan::New<Number>(total_retained_size));
   info.GetReturnValue().Set(result);
 }
 }

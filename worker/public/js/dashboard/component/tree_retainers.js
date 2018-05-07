@@ -7,10 +7,12 @@
         node: {},
         type: 'retainers',
         loadMoreStatus: { b1: false, b2: false, b3: false },
-        limit: Devtoolx.limit
+        limit: Devtoolx.limit,
+        tooltipType: 'normal'
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle',
+      'getAdditional', 'contextmenu', 'tooltipStyle', 'nodeClick', 'tooltipData'],
     methods: {
       formatNode(data, retainer, raw) {
         raw = raw || {};

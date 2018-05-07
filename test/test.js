@@ -12,9 +12,10 @@ function getNode() {
   // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2)
   // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2, { type: 'retainers' })
   // let node = parser.getNodeByOrdinalId([1, 2, 3], 0, 2)
-  let nodes = parser.getDominatorByIDom(0, 2, 1);
+  // let nodes = parser.getDominatorByIDom(0, 2, 1);
+  let repeat = parser.getChildRepeat(33538, 33539);
 
-  console.log(nodes, nodes.length);
+  console.log(repeat);
 }
 
 

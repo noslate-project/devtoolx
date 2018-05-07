@@ -72,6 +72,17 @@ function createServer(snapshot) {
     }
   });
 
+  app.get('/repeat/parend_id/:parend_id/child_id/:child_id', (req, res) => {
+    try {
+      let parendId = !isNaN(req.params.parend_id) && parseInt(req.params.parend_id);
+      let childId = !isNaN(req.params.child_id) && parseInt(req.params.child_id);
+      let repeat = parser.getChildRepeat(parendId, childId, req.query.type);
+      res.json({ ok: true, data: repeat });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
   return app;
 }
 

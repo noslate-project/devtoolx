@@ -1,6 +1,9 @@
 (function () {
   Devtoolx.limit = 25;
   Devtoolx.ratioLimit = 0.2;
+  Devtoolx.tooltipsTyleSource = 'position:absolute;display:block;font-size:1.0em;'
+    + 'border:1px solid #ccc;font-family:Menlo;';
+  Vue.component('my-tootip', Devtoolx.ToolTip);
   new Vue({
     el: '#app',
     components: {
@@ -13,7 +16,15 @@
         address: '',
         rootid: 0,
         nodeData: {},
-        statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-', totalSize: 0 }
+        statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-', totalSize: 0 },
+        tooltipStyle: Devtoolx.tooltipsTyleSource + 'opacity:0.0;',
+        tooltipData: {
+          childName: '',
+          childSize: -1,
+          parentOrdinalId: -1,
+          childOrdinalId: -1,
+          copyedElement: ''
+        }
       }
     },
     mounted() {
@@ -24,6 +35,7 @@
         vm.$set(vm.statistics, 'gcRoots', data.gcroots || '-');
         vm.$set(vm.statistics, 'totalSize', data.total_size || 0);
       }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
+      document.onclick = this.cancelTooltip.bind(this);
     },
     methods: {
       cleanInput() {
@@ -82,15 +94,31 @@
         var retainedSizeSource = `size: ${this.formatSize(data.retainedSize)}`;
         var retainedSize = retainedSizeSource;
         var parentRetainedSize = node.parent && node.parent && node.parent.data && node.parent.data.retainedSize;
+        var parentDominatesCount = node.parent && node.parent && node.parent.data && node.parent.data.dominatesCount;
         var childNodes = node.parent && node.parent && node.parent.childNodes;
-        var childNodesRetainedSizes = childNodes.reduce((t, n) => t += n.data && n.data.idomed && n.data.retainedSize || 0, 0);
         if (this.totalSize && data.retainedSize / this.totalSize > Devtoolx.ratioLimit)
           retainedSize = `<strong style="color:#d20d0d">${retainedSizeSource}</strong>`;
         else if (this.totalSize && data.idomed && parentRetainedSize / this.totalSize > Devtoolx.ratioLimit
-          && childNodesRetainedSizes / this.totalSize > Devtoolx.ratioLimit
-          && data.retainedSize >= (parentRetainedSize / childNodes.length))
+          && data.retainedSize >= (parentRetainedSize / parentDominatesCount))
           retainedSize = `<strong style="color:#ff9800;font-style:italic;">${retainedSizeSource}</strong>`;
         return `(type: ${data.nodeType}, ${retainedSize}, distance: ${data.distance})`;
+      },
+      contextmenu(event, data, node, component) {
+        var parentOrdinalId = node.parent && node.parent.data && node.parent.data.id;
+        if (!parentOrdinalId && parentOrdinalId !== 0) parentOrdinalId = -1;
+        var childOrdinalId = data.id;
+        if (!childOrdinalId && childOrdinalId !== 0) childOrdinalId = -1;
+        this.$set(this.tooltipData, 'childName', `${data.name} ${data.address}`);
+        this.$set(this.tooltipData, 'childSize', data.retainedSize);
+        this.$set(this.tooltipData, 'parentOrdinalId', parentOrdinalId);
+        this.$set(this.tooltipData, 'childOrdinalId', childOrdinalId);
+        this.tooltipStyle = Devtoolx.tooltipsTyleSource + `left:${event.pageX + 15}px;top:${event.pageY}px`;
+      },
+      cancelTooltip() {
+        this.tooltipStyle = Devtoolx.tooltipsTyleSource + 'opacity:0.0;';
+      },
+      nodeClick() {
+        this.tooltipStyle = Devtoolx.tooltipsTyleSource + 'opacity:0.0;';
       }
     },
     computed: {

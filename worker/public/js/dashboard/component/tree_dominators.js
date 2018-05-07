@@ -6,10 +6,12 @@
         type: 'dominators',
         props: { label: 'name', isLeaf: 'exists' },
         loadMoreStatus: { b1: false, b2: false, b3: false },
-        limit: Devtoolx.limit
+        limit: Devtoolx.limit,
+        tooltipType: 'dominates'
       }
     },
-    props: ['getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
+    props: ['getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional',
+      'contextmenu', 'tooltipStyle', 'nodeClick', 'tooltipData', 'rootid'],
     methods: {
       formatNode(data, edge, raw) {
         raw = raw || {};
@@ -42,6 +44,7 @@
           raw.edgeType = edgeType;
         }
         raw.idomed = true;
+        raw.dominatesCount = data.dominates_count;
         return raw;
       },
       loadNode(node, resolve) {

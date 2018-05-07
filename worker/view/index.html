@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/css/element.css">
+    <link rel="stylesheet" href="/css/bootstrap.css">
     <link rel="stylesheet" href="/css/index.css">
 </head>
 
@@ -21,19 +22,24 @@
         <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
         <p class="content" style="margin-left:20px;height:5px">Edges:</p>
         <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-edges>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle"
+            :node-click="nodeClick" :tooltip-data="tooltipData"></tree-edges>
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
         <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-retainers>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle"
+            :node-click="nodeClick" :tooltip-data="tooltipData"></tree-retainers>
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">DominatorsTree:</p>
-        <tree-dominators style="margin-left:15px" :get-node="getNode" :format-size="formatSize" :get-edge-type="getEdgeType" :get-title="getTitle"
-            :get-additional="getAdditional"></tree-dominators>
+        <tree-dominators style="margin-left:15px" :rootid="rootid" :get-node="getNode" :format-size="formatSize" :get-edge-type="getEdgeType"
+            :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle" :node-click="nodeClick"
+            :tooltip-data="tooltipData"></tree-dominators>
     </div>
 </body>
 
 <script type="text/template" id="tree-template">
     <div>
-        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy>
+        <my-tootip :tooltip-style="tooltipStyle" :tooltip-data="tooltipData" :get-node="getNode" :format-size="formatSize" :type="tooltipType"></my-tootip>
+        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="contextmenu"
+            @node-click="nodeClick">
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
@@ -65,9 +71,20 @@
     </div>
 </script>
 
+<script type="text/template" id="tooltip-template">
+    <div>
+        <ul class="dropdown-menu" :style="tooltipStyle">
+            <li class="tooltip-menu">
+                <el-button type="text" size="small" style="color:rgb(48, 57, 66)" @click.stop="getRepeat" :loading="repeatLoading" v-html="showRepeat"></el-button>
+            </li>
+        </ul>
+    </div>
+</script>
+
 <script src="/js/library/vue.js"></script>
 <script src="/js/library/element.js"></script>
 <script src="/js/library/axios.min.js"></script>
+<script src="/js/dashboard/component/tooltip.js"></script>
 <script src="/js/dashboard/component/tree_edges.js"></script>
 <script src="/js/dashboard/component/tree_retainers.js"></script>
 <script src="/js/dashboard/component/tree_dominators.js"></script>
