@@ -26,7 +26,7 @@ SnapshotParser::SnapshotParser(json profile) {
   edge_type_offset = IndexOf_(edge_fields, "type");
   edge_name_or_index_offset = IndexOf_(edge_fields, "name_or_index");
   edge_to_node_offset = IndexOf_(edge_fields, "to_node");
-  edge_from_node = new int[edge_count]();
+  // edge_from_node = new int[edge_count]();
   first_edge_indexes = GetFirstEdgeIndexes_();
   node_util = new snapshot_node::Node(this);
   edge_util = new snapshot_edge::Edge(this);
@@ -55,8 +55,14 @@ int* SnapshotParser::GetFirstEdgeIndexes_() {
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
     int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
-    for(int i = edge_index; i < offset; i += edge_field_length) {
-      edge_from_node[i / edge_field_length] = node_ordinal;
+    for(int i = edge_index; i < edge_index + offset; i += edge_field_length) {
+      // edge_from_node[i / edge_field_length] = node_ordinal;
+      int child = static_cast<int>(edges[i + edge_to_node_offset]);
+      if(child % node_field_length == 0) {
+        std::string key = std::to_string(node_ordinal) +
+                          std::to_string(child / node_field_length);
+        edge_searching_map_.insert(EdgeSearchingMap::value_type(key, i));
+      }
     }
     edge_index += offset;
   }
@@ -630,7 +636,6 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
     if(ordinal != root_index &&  dominators_tree_[ordinal] == id) {
       snapshot_dominate_t* dominate = new snapshot_dominate_t;
       dominate->dominate = ordinal;
-      // if(node_distances_[ordinal] == node_distances_[id] + 1)
       dominate->edge = GetEdgeByParentAndChild_(id, ordinal);
       dominates[--length] = dominate;
     }
@@ -638,6 +643,17 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
   std::sort(dominates, dominates + doms->length, [this](snapshot_dominate_t* lhs, snapshot_dominate_t* rhs) {
     int lhs_retained_size = this->retained_sizes_[lhs->dominate];
     int rhs_retained_size = this->retained_sizes_[rhs->dominate];
+    // if(lhs_retained_size == rhs_retained_size && lhs->edge != -1 && rhs->edge != -1) {
+    //   int lhs_type = edge_util->GetTypeForInt(lhs->edge, true);
+    //   int rhs_type = edge_util->GetTypeForInt(rhs->edge, true);
+    //   if(lhs_type == snapshot_edge::EdgeTypes::KELEMENT && rhs_type == snapshot_edge::EdgeTypes::KELEMENT) {
+    //     std::string lhs_edge_name = edge_util->GetNameOrIndex(lhs->edge, true);
+    //     std::string rhs_edge_name = edge_util->GetNameOrIndex(rhs->edge, true);
+    //     int lhs_index = atoi(lhs_edge_name.c_str() + 1);
+    //     int rhs_index = atoi(rhs_edge_name.c_str() + 1);
+    //     return lhs_index > rhs_index;
+    //   }
+    // }
     return lhs_retained_size > rhs_retained_size;
   });
   doms->dominates = dominates;
@@ -646,14 +662,10 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
 }
 
 int SnapshotParser::GetEdgeByParentAndChild_(int parent, int child) {
-  int* edges = node_util->GetEdges(parent, false);
-  int length = node_util->GetEdgeCount(parent, false);
-  for(int i = 0; i < length; i++) {
-    int child_ordinal = edge_util->GetTargetNode(edges[i], true);
-    if(child_ordinal == child)
-      return edges[i];
-  }
-  return -1;
+  std::string key = std::to_string(parent) + std::to_string(child);
+  if (edge_searching_map_.count(key) == 0)
+    return -1;
+  return edge_searching_map_.at(key);
 }
 
 int SnapshotParser::GetImmediateDominator(int id) {

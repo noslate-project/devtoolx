@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
   int dominate;
-  int edge;
+  int edge = -1;
 } snapshot_dominate_t;
 
 typedef struct {
@@ -41,6 +41,7 @@ typedef struct {
 
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
+typedef std::unordered_map<std::string, int> EdgeSearchingMap;
 typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
 typedef std::unordered_map<int, int*> OrderedEdgesMap;
 typedef std::unordered_map<int, snapshot_dominates_t*> OrderedDominatesMap;
@@ -111,6 +112,8 @@ private:
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
+  // (std::to_string(parent)+std::toString(child)) -> source edge index
+  EdgeSearchingMap edge_searching_map_;
   // ordinal id -> ordered retainers
   OrderedRetainersMap ordered_retainers_map_;
   // ordinal id -> ordered edges
