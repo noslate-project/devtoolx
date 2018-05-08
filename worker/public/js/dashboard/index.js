@@ -116,7 +116,7 @@
         this.$set(this.tooltipData, 'childSize', data.retainedSize);
         this.$set(this.tooltipData, 'parentOrdinalId', parentOrdinalId);
         this.$set(this.tooltipData, 'childOrdinalId', childOrdinalId);
-        this.tooltipStyle = Devtoolx.tooltipsTyleSource + `left:${event.pageX + 15}px;top:${event.pageY}px`;
+        this.tooltipStyle = Devtoolx.tooltipsTyleSource + `left:${event.pageX + 15}px;top:${event.pageY + 12}px`;
       },
       cancelTooltip() {
         this.tooltipStyle = Devtoolx.tooltipsTyleSource + 'opacity:0.0;';

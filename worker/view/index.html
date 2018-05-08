@@ -32,12 +32,12 @@
         <tree-dominators style="margin-left:15px" :rootid="rootid" :get-node="getNode" :format-size="formatSize" :get-edge-type="getEdgeType"
             :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle" :node-click="nodeClick"
             :tooltip-data="tooltipData"></tree-dominators>
+        <my-tootip :tooltip-style="tooltipStyle" :tooltip-data="tooltipData" :get-node="getNode" :format-size="formatSize"></my-tootip>
     </div>
 </body>
 
 <script type="text/template" id="tree-template">
     <div>
-        <my-tootip :tooltip-style="tooltipStyle" :tooltip-data="tooltipData" :get-node="getNode" :format-size="formatSize" :type="tooltipType"></my-tootip>
         <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="contextmenu"
             @node-click="nodeClick">
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
@@ -75,7 +75,7 @@
     <div>
         <ul class="dropdown-menu" :style="tooltipStyle">
             <li class="tooltip-menu">
-                <el-button type="text" size="small" style="color:rgb(48, 57, 66)" @click.stop="getRepeat" :loading="repeatLoading" v-html="showRepeat"></el-button>
+                <span style="color:rgb(48, 57, 66)" @click.stop="noop" :loading="repeatLoading" v-html="showRepeat"></span>
             </li>
         </ul>
     </div>
