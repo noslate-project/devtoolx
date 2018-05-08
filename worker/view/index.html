@@ -38,7 +38,7 @@
 
 <script type="text/template" id="tree-template">
     <div>
-        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="contextmenu"
+        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="uniqueContextmenu"
             @node-click="nodeClick">
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">

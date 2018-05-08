@@ -18,7 +18,7 @@
         var tooltipData = vm.tooltipData;
         if (tooltipData.parentOrdinalId !== -1 && tooltipData.childOrdinalId !== -1) {
           vm.repeatLoading = true;
-          vm.getNode(`/repeat/parend_id/${tooltipData.parentOrdinalId}/child_id/${tooltipData.childOrdinalId}?type=${vm.type}`)
+          vm.getNode(`/repeat/parend_id/${tooltipData.parentOrdinalId}/child_id/${tooltipData.childOrdinalId}?type=${tooltipData.type}`)
             .then(data => {
               if (data.count === 0) {
                 data.count = 1;

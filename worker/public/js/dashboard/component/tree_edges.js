@@ -120,6 +120,9 @@
             }
             vm.$set(vm.loadMoreStatus, setKey, false);
           }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
+      },
+      uniqueContextmenu(event, data, node, component) {
+        this.contextmenu(this.tooltipType, event, data, node, component);
       }
     },
     watch: {

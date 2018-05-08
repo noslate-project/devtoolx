@@ -19,6 +19,7 @@
         statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-', totalSize: 0 },
         tooltipStyle: Devtoolx.tooltipsTyleSource + 'opacity:0.0;',
         tooltipData: {
+          type: 'normal',
           childName: '',
           childSize: -1,
           parentOrdinalId: -1,
@@ -107,11 +108,12 @@
         }
         return `(type: ${data.nodeType}, ${retainedSize}, distance: ${data.distance})`;
       },
-      contextmenu(event, data, node, component) {
+      contextmenu(type, event, data, node, component) {
         var parentOrdinalId = node.parent && node.parent.data && node.parent.data.id;
         if (!parentOrdinalId && parentOrdinalId !== 0) parentOrdinalId = -1;
         var childOrdinalId = data.id;
         if (!childOrdinalId && childOrdinalId !== 0) childOrdinalId = -1;
+        this.$set(this.tooltipData, 'type', type);
         this.$set(this.tooltipData, 'childName', `${data.name} ${data.address}`);
         this.$set(this.tooltipData, 'childSize', data.retainedSize);
         this.$set(this.tooltipData, 'parentOrdinalId', parentOrdinalId);
