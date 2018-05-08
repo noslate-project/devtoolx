@@ -87,20 +87,24 @@
         return node.data.edgeType;
       },
       getTitle(node) {
-        return `id: ${node.data.id}, self_size: ${this.formatSize(node.data.self_size)}`
+        return `id: ${node.data.id}, self_size: ${this.formatSize(node.data.selfSize)}`
       },
       getAdditional(node) {
         var data = node.data;
         var retainedSizeSource = `size: ${this.formatSize(data.retainedSize)}`;
         var retainedSize = retainedSizeSource;
-        var parentRetainedSize = node.parent && node.parent && node.parent.data && node.parent.data.retainedSize;
-        var parentDominatesCount = node.parent && node.parent && node.parent.data && node.parent.data.dominatesCount;
-        var childNodes = node.parent && node.parent && node.parent.childNodes;
+        var parent = node && node.parent && node.parent || {};
+        var parentData = parent.data || {};
+        var parentRetainedSize = parentData.retainedSize;
+        var parentSelfSize = parentData.selfSize;
+        var parentDominatesCount = parentData.dominatesCount;
         if (this.totalSize && data.retainedSize / this.totalSize > Devtoolx.ratioLimit)
           retainedSize = `<strong style="color:#d20d0d">${retainedSizeSource}</strong>`;
-        else if (this.totalSize && data.idomed && parentRetainedSize / this.totalSize > Devtoolx.ratioLimit
-          && data.retainedSize >= (parentRetainedSize / parentDominatesCount))
+        else if (this.totalSize && data.idomed && (parentRetainedSize / this.totalSize > Devtoolx.ratioLimit || parentData.warn)
+          && data.retainedSize >= (parentRetainedSize - parentSelfSize) / parentDominatesCount) {
           retainedSize = `<strong style="color:#ff9800;font-style:italic;">${retainedSizeSource}</strong>`;
+          data.warn = true;
+        }
         return `(type: ${data.nodeType}, ${retainedSize}, distance: ${data.distance})`;
       },
       contextmenu(event, data, node, component) {

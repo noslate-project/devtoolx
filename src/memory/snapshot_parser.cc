@@ -55,15 +55,16 @@ int* SnapshotParser::GetFirstEdgeIndexes_() {
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
     int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
-    for(int i = edge_index; i < edge_index + offset; i += edge_field_length) {
-      // edge_from_node[i / edge_field_length] = node_ordinal;
-      int child = static_cast<int>(edges[i + edge_to_node_offset]);
-      if(child % node_field_length == 0) {
-        std::string key = std::to_string(node_ordinal) +
-                          std::to_string(child / node_field_length);
-        edge_searching_map_.insert(EdgeSearchingMap::value_type(key, i));
+    if(node_ordinal == root_index)
+      for(int i = edge_index; i < edge_index + offset; i += edge_field_length) {
+        // edge_from_node[i / edge_field_length] = node_ordinal;
+        int child = static_cast<int>(edges[i + edge_to_node_offset]);
+        if(child % node_field_length == 0) {
+          std::string key = std::to_string(node_ordinal) +
+                            std::to_string(child / node_field_length);
+          edge_searching_map_.insert(EdgeSearchingMap::value_type(key, i));
+        }
       }
-    }
     edge_index += offset;
   }
   return first_edge_indexes;
@@ -620,6 +621,19 @@ int* SnapshotParser::GetSortedEdges(int id) {
   return edges;
 }
 
+void SnapshotParser::MarkEdge_(int ordinal) {
+  int length = node_util->GetEdgeCount(ordinal, false);
+  int* edges = node_util->GetEdges(ordinal, false);
+  for(int i = 0; i < length; i++) {
+    int edge = *(edges + i);
+    int child = edge_util->GetTargetNode(edge, true);
+    std::string key = std::to_string(ordinal) +
+                      std::to_string(child);
+    edge_searching_map_.insert(EdgeSearchingMap::value_type(key, edge));
+  }
+  delete[] edges;
+}
+
 snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
   if(ordered_dominates_map_.count(id) != 0) {
     return ordered_dominates_map_.at(id);
@@ -634,6 +648,7 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
   snapshot_dominate_t** dominates = new snapshot_dominate_t*[length];
   for(int ordinal = 0; ordinal < node_count; ordinal++) {
     if(ordinal != root_index &&  dominators_tree_[ordinal] == id) {
+      MarkEdge_(ordinal);
       snapshot_dominate_t* dominate = new snapshot_dominate_t;
       dominate->dominate = ordinal;
       dominate->edge = GetEdgeByParentAndChild_(id, ordinal);

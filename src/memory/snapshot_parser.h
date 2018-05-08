@@ -108,6 +108,7 @@ private:
   bool IsEssentialEdge_(int ordinal, int type);
   bool HasOnlyWeakRetainers_(int ordinal);
   int GetEdgeByParentAndChild_(int parent, int child);
+  void MarkEdge_(int ordinal);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool

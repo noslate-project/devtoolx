@@ -28,7 +28,7 @@
         if (data.is_gcroot)
           raw.nameClass = `${raw.nameClass} node-gcroot`;
         raw.address = data.address;
-        raw.self_size = data.self_size;
+        raw.selfSize = data.self_size;
         raw.nodeType = data.type;
         raw.retainedSize = data.retained_size;
         raw.distance = data.distance;
