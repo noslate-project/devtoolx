@@ -41,7 +41,7 @@ typedef struct {
 
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
-typedef std::unordered_map<std::string, int> EdgeSearchingMap;
+typedef std::unordered_map<long long, int> EdgeSearchingMap;
 typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
 typedef std::unordered_map<int, int*> OrderedEdgesMap;
 typedef std::unordered_map<int, snapshot_dominates_t*> OrderedDominatesMap;

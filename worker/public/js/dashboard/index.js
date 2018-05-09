@@ -19,6 +19,7 @@
         statistics: { nodeCount: '-', edgeCount: '-', gcRoots: '-', totalSize: 0 },
         tooltipStyle: Devtoolx.tooltipsTyleSource + 'opacity:0.0;',
         tooltipData: {
+          index: null,
           type: 'normal',
           childName: '',
           childSize: -1,
@@ -88,7 +89,8 @@
         return node.data.edgeType;
       },
       getTitle(node) {
-        return `id: ${node.data.id}, self_size: ${this.formatSize(node.data.selfSize)}`
+        var data = node.data || {};
+        return `id: ${data.id}, self_size: ${this.formatSize(data.selfSize)}`;
       },
       getAdditional(node) {
         var data = node.data;
@@ -113,6 +115,7 @@
         if (!parentOrdinalId && parentOrdinalId !== 0) parentOrdinalId = -1;
         var childOrdinalId = data.id;
         if (!childOrdinalId && childOrdinalId !== 0) childOrdinalId = -1;
+        this.$set(this.tooltipData, 'index', data.index);
         this.$set(this.tooltipData, 'type', type);
         this.$set(this.tooltipData, 'childName', `${data.name} ${data.address}`);
         this.$set(this.tooltipData, 'childSize', data.retainedSize);

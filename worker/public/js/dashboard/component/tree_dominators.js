@@ -5,9 +5,11 @@
       return {
         type: 'dominators',
         props: { label: 'name', isLeaf: 'exists' },
-        loadMoreStatus: { b1: false, b2: false, b3: false },
+        loadMoreStatus: { b1: false, b2: false, b3: false, b4: false },
         limit: Devtoolx.limit,
-        tooltipType: 'dominates'
+        tooltipType: 'dominates',
+        customizeStart: 0,
+        showCustomizeStart: false
       }
     },
     props: ['getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional',
@@ -45,6 +47,7 @@
         }
         raw.idomed = true;
         raw.dominatesCount = data.dominates_count;
+        raw.index = data.index;
         return raw;
       },
       loadNode(node, resolve) {
@@ -71,9 +74,9 @@
             resolve(results);
           }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
       },
-      loadMore(node, rawdata, number) {
+      loadMore(node, rawdata, number, customize) {
         var vm = this;
-        var setKey = number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
+        var setKey = customize && 'b4' || number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
         vm.$set(vm.loadMoreStatus, setKey, true);
         vm.getNode(`/dominates/${rawdata.id}?current=${rawdata.dominatesCurrent}&limit=${number}`)
           .then(data => {
@@ -92,6 +95,22 @@
       },
       uniqueContextmenu(event, data, node, component) {
         this.contextmenu(this.tooltipType, event, data, node, component);
+      },
+      uniqueNodeClick() {
+        this.showCustomizeStart = false;
+        this.customizeStart = 0;
+        this.nodeClick();
+      },
+      jump(node, rawdata) {
+        if (this.showCustomizeStart) {
+          if (isNaN(this.customizeStart)) {
+
+          } else
+            rawdata.dominatesCurrent = Number(this.customizeStart) + Number(rawdata.dominatesCurrent);
+          this.loadMore(node, rawdata, this.limit * 2, true);
+        } else {
+          this.showCustomizeStart = true;
+        }
       }
     }
   };

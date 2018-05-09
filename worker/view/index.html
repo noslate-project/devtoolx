@@ -39,7 +39,7 @@
 <script type="text/template" id="tree-template">
     <div>
         <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="uniqueContextmenu"
-            @node-click="nodeClick">
+            @node-click="uniqueNodeClick">
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
@@ -53,7 +53,7 @@
                 <small class="additional" v-html="getAdditional(node)"></small>
             </span>
             </span>
-            <span v-if="node.data.loadMore">
+            <span v-if="node.data.loadMore" @click.stop="">
                 <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit * 2)" :loading="loadMoreStatus.b1">
                     +{{ limit * 2 }}
                 </el-button>
@@ -65,6 +65,8 @@
                 :loading="loadMoreStatus.b3">
                     + left {{ node.data.edgesLeft || node.data.retainersLeft || node.data.dominatesLeft }}
                 </el-button>
+                <input v-if="showCustomizeStart" type="text" class="customize-start" v-model="customizeStart"></input>
+                <el-button plain size="small" class="more-button" @click="jump(node, data)" :loading="loadMoreStatus.b4">jump</el-button>
             </span>
             </span>
         </el-tree>

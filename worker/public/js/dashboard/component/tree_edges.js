@@ -6,9 +6,11 @@
         props: { label: 'name', isLeaf: 'exists' },
         node: {},
         type: 'edges',
-        loadMoreStatus: { b1: false, b2: false, b3: false },
+        loadMoreStatus: { b1: false, b2: false, b3: false, b4: false },
         limit: Devtoolx.limit,
-        tooltipType: 'normal'
+        tooltipType: 'normal',
+        customizeStart: 0,
+        showCustomizeStart: false
       }
     },
     props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle',
@@ -50,6 +52,7 @@
           raw.edgeType = edge.type;
           raw.idomed = edge.idomed;
           raw.dominatesCount = data.dominates_count;
+          raw.index = edge.index;
         }
         return raw;
       },
@@ -95,10 +98,10 @@
           }
         }
       },
-      loadMore(node, rawdata, number) {
+      loadMore(node, rawdata, number, customize) {
         var vm = this;
         var p = null;
-        var setKey = number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
+        var setKey = customize && 'b4' || number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
         vm.$set(vm.loadMoreStatus, setKey, true);
         vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.edgesCurrent}&limit=${number}&type=edges`)
           .then(parent => {
@@ -123,6 +126,22 @@
       },
       uniqueContextmenu(event, data, node, component) {
         this.contextmenu(this.tooltipType, event, data, node, component);
+      },
+      uniqueNodeClick() {
+        this.showCustomizeStart = false;
+        this.customizeStart = 0;
+        this.nodeClick();
+      },
+      jump(node, rawdata) {
+        if (this.showCustomizeStart) {
+          if (isNaN(this.customizeStart)) {
+
+          } else
+            rawdata.edgesCurrent = Number(this.customizeStart) + Number(rawdata.edgesCurrent);
+          this.loadMore(node, rawdata, this.limit * 2, true);
+        } else {
+          this.showCustomizeStart = true;
+        }
       }
     },
     watch: {

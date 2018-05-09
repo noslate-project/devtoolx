@@ -60,8 +60,7 @@ int* SnapshotParser::GetFirstEdgeIndexes_() {
         // edge_from_node[i / edge_field_length] = node_ordinal;
         int child = static_cast<int>(edges[i + edge_to_node_offset]);
         if(child % node_field_length == 0) {
-          std::string key = std::to_string(node_ordinal) +
-                            std::to_string(child / node_field_length);
+          long long key = (static_cast<long long>(node_ordinal) << 32) + (child / node_field_length);
           edge_searching_map_.insert(EdgeSearchingMap::value_type(key, i));
         }
       }
@@ -627,8 +626,7 @@ void SnapshotParser::MarkEdge_(int ordinal) {
   for(int i = 0; i < length; i++) {
     int edge = *(edges + i);
     int child = edge_util->GetTargetNode(edge, true);
-    std::string key = std::to_string(ordinal) +
-                      std::to_string(child);
+    long long key =  (static_cast<long long>(ordinal) << 32) + child;
     edge_searching_map_.insert(EdgeSearchingMap::value_type(key, edge));
   }
   delete[] edges;
@@ -677,7 +675,7 @@ snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
 }
 
 int SnapshotParser::GetEdgeByParentAndChild_(int parent, int child) {
-  std::string key = std::to_string(parent) + std::to_string(child);
+  long long key = (static_cast<long long>(parent) << 32) + child;
   if (edge_searching_map_.count(key) == 0)
     return -1;
   return edge_searching_map_.at(key);

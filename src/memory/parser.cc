@@ -136,6 +136,7 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       edge->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       edge->Set(Nan::New<String>("to_node").ToLocalChecked(), Nan::New<Number>(to_node));
       edge->Set(Nan::New<String>("idomed").ToLocalChecked(), Nan::New<Boolean>(idomed));
+      edge->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
       edges->Set((i - start_edge_index), edge);
     }
     if(stop_edge_index < edges_length) {
@@ -170,6 +171,7 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       retainer->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
       retainer->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       retainer->Set(Nan::New<String>("from_node").ToLocalChecked(), Nan::New<Number>(node));
+      retainer->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
       retainers->Set((i - start_retainer_index), retainer);
     }
     if(stop_retainer_index < retainers_length) {
@@ -348,6 +350,7 @@ void Parser::GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info
       std::string edge_type = parser->snapshot_parser->edge_util->GetType(sdom->edge, true);
       node->Set(Nan::New<String>("edge_type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
     }
+    node->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
     dominates->Set((i - current), node);
   }
   Local<Object> result = Nan::New<Object>();
