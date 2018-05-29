@@ -5,6 +5,59 @@
 namespace snapshot_node {
 Node::Node(snapshot_parser::SnapshotParser* parser): parser_(parser) {}
 
+std::string Node::GetConsStringName(int id) {
+  json strings = parser_->strings;
+  if(lazy_string_map_.count(id) != 0)
+    return lazy_string_map_.at(id);
+  // max length
+  int* node_stack = new int[1024 * 1024]();
+  int length = 1;
+  node_stack[0] = id;
+  std::string name = "";
+  while(length > 0 && name.length() < 256) {
+    int index = node_stack[--length];
+    if(GetTypeForInt(index, false) != KCONCATENATED_STRING) {
+      name += strings[static_cast<int>(parser_->nodes[index * parser_->node_field_length + parser_->node_name_offset])];
+      continue;
+    }
+    int* edges = GetEdges(index, false);
+    int edge_count = GetEdgeCount(index, false);
+    int first_node_index = -1;
+    int second_node_index = -1;
+    for(int i = 0; i < edge_count; i++) {
+      int edge = edges[i];
+      int edge_type = parser_->edge_util->GetTypeForInt(edge, true);
+      if(edge_type == snapshot_edge::KERNAL) {
+        if(first_int_ != -1 && second_int_ != -1) {
+          int edge_name = parser_->edge_util->GetNameOrIndexForInt(edge, true);
+          if(edge_name == first_int_)
+            first_node_index = parser_->edge_util->GetTargetNode(edge, true);
+          if(edge_name == second_int_)
+            second_node_index = parser_->edge_util->GetTargetNode(edge, true);
+        } else {
+          std::string edge_name = parser_->edge_util->GetNameOrIndex(edge, true);
+          if (edge_name == "first") {
+            first_node_index = parser_->edge_util->GetTargetNode(edge, true);
+            first_int_ =  parser_->edge_util->GetNameOrIndexForInt(edge, true);
+          }
+          if (edge_name == "second") {
+            second_node_index = parser_->edge_util->GetTargetNode(edge, true);
+            second_int_ = parser_->edge_util->GetNameOrIndexForInt(edge, true);
+          }
+        }
+      }
+    }
+    delete[] edges;
+    if(second_node_index != -1)
+      node_stack[length++] = second_node_index;
+    if(first_node_index != -1)
+      node_stack[length++] = first_node_index;
+  }
+  delete[] node_stack;
+  lazy_string_map_.insert(LazyStringMap::value_type(id, name));
+  return name;
+}
+
 int Node::GetNodeId(int source) {
   int node_field_length = parser_->node_field_length;
   if(source %  node_field_length != 0) {

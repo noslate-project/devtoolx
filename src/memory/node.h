@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "../library/json.hpp"
 
 #ifndef _SNAPSHOT_NODE_H_
@@ -25,6 +26,8 @@ enum NodeTypes {
   KSLICED_STRING
 };
 
+typedef std::unordered_map<int, std::string> LazyStringMap;
+
 class Node {
 public:
   explicit Node(snapshot_parser::SnapshotParser* parser);
@@ -38,8 +41,12 @@ public:
   int* GetEdges(int id, bool source);
   int GetEdgeCount(int id, bool source);
   int GetSelfSize(int id, bool source);
+  std::string GetConsStringName(int id);
 private:
   snapshot_parser::SnapshotParser* parser_;
+  LazyStringMap lazy_string_map_;
+  int first_int_ = -1;
+  int second_int_ = -1;
 };
 }
 

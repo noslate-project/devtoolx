@@ -57,6 +57,20 @@ std::string Edge::GetNameOrIndex(int id, bool source) {
   };
 }
 
+int Edge::GetNameOrIndexForInt(int id, bool source) {
+  int edge_field_length = parser_->edge_field_length;
+  if(source && id % edge_field_length != 0) {
+    Nan::ThrowTypeError(Nan::New<v8::String>("edge source id is wrong!").ToLocalChecked());
+    return -1;
+  }
+  int edge_source_index = source ? id : id * edge_field_length;
+  if(edge_source_index / edge_field_length >= parser_->edge_count) {
+    Nan::ThrowTypeError(Nan::New<v8::String>("edge id larger than edges.length!").ToLocalChecked());
+    return -1;
+  }
+  return static_cast<int>(parser_->edges[edge_source_index + parser_->edge_name_or_index_offset]);
+}
+
 int Edge::GetTargetNode(int id, bool source) {
   int edge_field_length = parser_->edge_field_length;
   if(source && id % edge_field_length != 0) {

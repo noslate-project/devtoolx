@@ -38,6 +38,7 @@ private:
   static void GetStatistics(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info);
+  static void GetConsStringName(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static Nan::Persistent<v8::Function> constructor;
   // snapshot info
   int filelength_;

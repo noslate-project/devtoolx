@@ -39,6 +39,7 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getStatistics", GetStatistics);
   Nan::SetPrototypeMethod(tpl, "getDominatorByIDom", GetDominatorByIDom);
   Nan::SetPrototypeMethod(tpl, "getChildRepeat", GetChildRepeat);
+  Nan::SetPrototypeMethod(tpl, "getConsStringName", GetConsStringName);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
@@ -93,7 +94,12 @@ Local<Object> Parser::SetNormalInfo_(int id) {
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
   std::string type = snapshot_parser->node_util->GetType(id, false);
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
-  std::string name = snapshot_parser->node_util->GetName(id, false);
+  int type_int = snapshot_parser->node_util->GetTypeForInt(id, false);
+  std::string name;
+  if(type_int == snapshot_node::NodeTypes::KCONCATENATED_STRING)
+    name = snapshot_parser->node_util->GetConsStringName(id);
+  else
+    name = snapshot_parser->node_util->GetName(id, false);
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
   std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id, false));
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
@@ -421,5 +427,16 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   result->Set(Nan::New<String>("count").ToLocalChecked(), Nan::New<Number>(count));
   result->Set(Nan::New<String>("total_retained_size").ToLocalChecked(), Nan::New<Number>(total_retained_size));
   info.GetReturnValue().Set(result);
+}
+
+void Parser::GetConsStringName(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+  if(!info[0]->IsNumber()) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 must be number!").ToLocalChecked());
+    return;
+  }
+  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  Local<String> cons_name = Nan::New<String>(parser->snapshot_parser->node_util
+                            ->GetConsStringName(info[0]->ToInteger()->Value())).ToLocalChecked();
+  info.GetReturnValue().Set(cons_name);
 }
 }
