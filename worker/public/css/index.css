@@ -28,6 +28,10 @@
   color: rgb(48, 57, 66);
 }
 
+.string {
+  color: #4caf50;
+}
+
 .closure {
   font-style: italic;
 }

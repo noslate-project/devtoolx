@@ -16,18 +16,24 @@
     props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle',
       'getAdditional', 'contextmenu', 'tooltipStyle', 'nodeClick', 'tooltipData'],
     methods: {
+      isString(data) {
+        return data.type === 'concatenated string' || data.type === 'sliced string' || data.type === 'string';
+      },
       formatNode(data, edge, raw) {
         raw = raw || {};
         raw.id = data.id;
         raw.key = `${Math.random().toString(36).substr(2)}`;
         if (data.type === 'array') data.name = `${data.name || ''}[]`;
         if (data.type === 'closure') data.name = `${data.name || ''}()`;
+        if (this.isString(data)) data.name = `"${data.name || ''}"`;
         if (typeof data.name === 'string' && data.name.length > 100)
           raw.name = data.name.substr(0, 100);
         else
           raw.name = data.name;
         raw.rawName = data.name;
         raw.nameClass = 'node-name';
+        if (this.isString(data))
+          raw.nameClass = `${raw.nameClass} string`;
         if (data.type === 'closure')
           raw.nameClass = `${raw.nameClass} closure`;
         raw.address = data.address;
