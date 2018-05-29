@@ -117,7 +117,7 @@
         if (!childOrdinalId && childOrdinalId !== 0) childOrdinalId = -1;
         this.$set(this.tooltipData, 'index', data.index);
         this.$set(this.tooltipData, 'type', type);
-        this.$set(this.tooltipData, 'childName', `${data.name} ${data.address}`);
+        this.$set(this.tooltipData, 'childName', `${data.rawName} ${data.address}`);
         this.$set(this.tooltipData, 'childSize', data.retainedSize);
         this.$set(this.tooltipData, 'parentOrdinalId', parentOrdinalId);
         this.$set(this.tooltipData, 'childOrdinalId', childOrdinalId);

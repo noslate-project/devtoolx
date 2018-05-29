@@ -25,6 +25,7 @@
           raw.name = data.name.substr(0, 100);
         else
           raw.name = data.name;
+        raw.rawName = data.name;
         if (data.type === 'closure')
           raw.nameClass = `${raw.nameClass} closure`;
         if (data.is_gcroot)
