@@ -104,14 +104,16 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
 
 Local<Object> Parser::SetNormalInfo_(int id) {
   Local<Object> node = Nan::New<Object>();
+  if(!snapshot_parser->node_util->CheckOrdinalId(id))
+    return node;
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
-  std::string type = snapshot_parser->node_util->GetType(id, false);
+  std::string type = snapshot_parser->node_util->GetType(id);
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
-  std::string name = snapshot_parser->node_util->GetName(id, false);
+  std::string name = snapshot_parser->node_util->GetName(id);
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
-  std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id, false));
+  std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id));
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
-  int self_size = snapshot_parser->node_util->GetSelfSize(id, false);
+  int self_size = snapshot_parser->node_util->GetSelfSize(id);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
   int retained_size = snapshot_parser->GetRetainedSize(id);
   node->Set(Nan::New<String>("retained_size").ToLocalChecked(), Nan::New<Number>(retained_size));
@@ -383,7 +385,6 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
   int parent_id = info[0]->ToInteger()->Value();
   int child_id = info[1]->ToInteger()->Value();
-  // std::string child_name = parser->snapshot_parser->node_util->GetName(child_id, false);
   int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id, false);
   int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id, false);
   int child_distance = parser->snapshot_parser->GetDistance(child_id);

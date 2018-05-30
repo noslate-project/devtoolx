@@ -32,15 +32,16 @@ class Node {
 public:
   explicit Node(snapshot_parser::SnapshotParser* parser);
   ~Node();
+  bool CheckOrdinalId(int id);
   int GetNodeId(int source );
-  long GetAddress(int id, bool source);
-  std::string GetType(int id, bool source);
-  int GetTypeForInt(int id, bool source);
-  std::string GetName(int id, bool source);
-  int GetNameForInt(int id, bool source);
-  int* GetEdges(int id, bool source);
-  int GetEdgeCount(int id, bool source);
-  int GetSelfSize(int id, bool source);
+  long GetAddress(int id);
+  std::string GetType(int id);
+  int GetTypeForInt(int id);
+  std::string GetName(int id);
+  int GetNameForInt(int id);
+  int* GetEdges(int id);
+  int GetEdgeCount(int id);
+  int GetSelfSize(int id);
   std::string GetConsStringName(int id);
 private:
   snapshot_parser::SnapshotParser* parser_;

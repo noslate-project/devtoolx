@@ -91,19 +91,21 @@ void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
 
 Local<Object> Parser::SetNormalInfo_(int id) {
   Local<Object> node = Nan::New<Object>();
+  if(!snapshot_parser->node_util->CheckOrdinalId(id))
+    return node;
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
-  std::string type = snapshot_parser->node_util->GetType(id, false);
+  std::string type = snapshot_parser->node_util->GetType(id);
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
-  int type_int = snapshot_parser->node_util->GetTypeForInt(id, false);
+  int type_int = snapshot_parser->node_util->GetTypeForInt(id);
   std::string name;
   if(type_int == snapshot_node::NodeTypes::KCONCATENATED_STRING)
     name = snapshot_parser->node_util->GetConsStringName(id);
   else
-    name = snapshot_parser->node_util->GetName(id, false);
+    name = snapshot_parser->node_util->GetName(id);
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
-  std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id, false));
+  std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id));
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
-  int self_size = snapshot_parser->node_util->GetSelfSize(id, false);
+  int self_size = snapshot_parser->node_util->GetSelfSize(id);
   node->Set(Nan::New<String>("self_size").ToLocalChecked(), Nan::New<Number>(self_size));
   int retained_size = snapshot_parser->GetRetainedSize(id);
   node->Set(Nan::New<String>("retained_size").ToLocalChecked(), Nan::New<Number>(retained_size));
@@ -120,8 +122,12 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   Local<Object> node = SetNormalInfo_(id);
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
+    if(!snapshot_parser->node_util->CheckOrdinalId(id)) {
+      Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
+      return node;
+    }
     int* edges_local = snapshot_parser->GetSortedEdges(id);
-    int edges_length = snapshot_parser->node_util->GetEdgeCount(id, false);
+    int edges_length = snapshot_parser->node_util->GetEdgeCount(id);
     int start_edge_index = current;
     int stop_edge_index = current + limit;
     if(start_edge_index >= edges_length) {
@@ -245,7 +251,7 @@ void Parser::GetNodeByOrdinalId(const Nan::FunctionCallbackInfo<Value>& info) {
       break;
     }
     if(!info[2]->IsNumber()) {
-      limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
+      limit = parser->snapshot_parser->node_util->GetEdgeCount(id);
     }
     nodes->Set(i, parser->GetNodeById_(id, current, limit, type));
   }
@@ -279,7 +285,7 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
   if(info[1]->IsNumber()) {
     current = static_cast<int>(info[1]->ToInteger()->Value());
   }
-  int limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
+  int limit = parser->snapshot_parser->node_util->GetEdgeCount(id);
   if(info[2]->IsNumber()) {
     limit = static_cast<int>(info[2]->ToInteger()->Value());
   }
@@ -378,9 +384,13 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
   int parent_id = info[0]->ToInteger()->Value();
   int child_id = info[1]->ToInteger()->Value();
-  // std::string child_name = parser->snapshot_parser->node_util->GetName(child_id, false);
-  int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id, false);
-  int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id, false);
+  if(!parser->snapshot_parser->node_util->CheckOrdinalId(child_id) ||
+      !parser->snapshot_parser->node_util->CheckOrdinalId(parent_id)) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
+    return;
+  }
+  int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id);
+  int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id);
   int child_distance = parser->snapshot_parser->GetDistance(child_id);
   // search
   int count = 0;
@@ -397,8 +407,10 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
       for(int i = 0; i < childs_length; i++) {
         snapshot_dominate_t* child = *(childs + i);
         int target_node = child->dominate;
-        int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
-        int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
+        if(!parser->snapshot_parser->node_util->CheckOrdinalId(target_node))
+          continue;
+        int name = parser->snapshot_parser->node_util->GetNameForInt(target_node);
+        int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node);
         int distance = parser->snapshot_parser->GetDistance(target_node);
         if(name == child_name && self_size == child_self_size
             && child_distance == distance) {
@@ -409,12 +421,14 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
     }
   }
   if(!done) {
-    int childs_length = parser->snapshot_parser->node_util->GetEdgeCount(parent_id, false);
+    int childs_length = parser->snapshot_parser->node_util->GetEdgeCount(parent_id);
     int* childs = parser->snapshot_parser->GetSortedEdges(parent_id);
     for(int i = 0; i < childs_length; i++) {
       int target_node = parser->snapshot_parser->edge_util->GetTargetNode(*(childs + i), true);
-      int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
-      int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
+      if(!parser->snapshot_parser->node_util->CheckOrdinalId(target_node))
+        continue;
+      int name = parser->snapshot_parser->node_util->GetNameForInt(target_node);
+      int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node);
       int distance = parser->snapshot_parser->GetDistance(target_node);
       if(name == child_name && self_size == child_self_size
           && child_distance == distance) {
@@ -435,8 +449,13 @@ void Parser::GetConsStringName(const Nan::FunctionCallbackInfo<v8::Value>& info)
     return;
   }
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
+  int id = info[0]->ToInteger()->Value();
+  if(!parser->snapshot_parser->node_util->CheckOrdinalId(id)) {
+    Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
+    return;
+  }
   Local<String> cons_name = Nan::New<String>(parser->snapshot_parser->node_util
-                            ->GetConsStringName(info[0]->ToInteger()->Value())).ToLocalChecked();
+                            ->GetConsStringName(id)).ToLocalChecked();
   info.GetReturnValue().Set(cons_name);
 }
 }
