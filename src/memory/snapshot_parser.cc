@@ -26,7 +26,7 @@ SnapshotParser::SnapshotParser(json profile) {
   edge_type_offset = IndexOf_(edge_fields, "type");
   edge_name_or_index_offset = IndexOf_(edge_fields, "name_or_index");
   edge_to_node_offset = IndexOf_(edge_fields, "to_node");
-  edge_from_node = new int[edge_count]();
+  // edge_from_node = new int[edge_count]();
   first_edge_indexes = GetFirstEdgeIndexes_();
   node_util = new snapshot_node::Node(this);
   edge_util = new snapshot_edge::Edge(this);
@@ -55,9 +55,15 @@ int* SnapshotParser::GetFirstEdgeIndexes_() {
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
     int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
-    for(int i = edge_index; i < offset; i += edge_field_length) {
-      edge_from_node[i / edge_field_length] = node_ordinal;
-    }
+    if(node_ordinal == root_index)
+      for(int i = edge_index; i < edge_index + offset; i += edge_field_length) {
+        // edge_from_node[i / edge_field_length] = node_ordinal;
+        int child = static_cast<int>(edges[i + edge_to_node_offset]);
+        if(child % node_field_length == 0) {
+          long long key = (static_cast<long long>(node_ordinal) << 32) + (child / node_field_length);
+          edge_searching_map_.insert(EdgeSearchingMap::value_type(key, i));
+        }
+      }
     edge_index += offset;
   }
   return first_edge_indexes;
@@ -65,7 +71,9 @@ int* SnapshotParser::GetFirstEdgeIndexes_() {
 
 void SnapshotParser::CreateAddressMap() {
   for(int ordinal = 0; ordinal < node_count; ordinal++) {
-    long address = node_util->GetAddress(ordinal, false);
+    if(!node_util->CheckOrdinalId(ordinal))
+      continue;
+    long address = node_util->GetAddress(ordinal);
     address_map_.insert(AddressMap::value_type(address, ordinal));
   }
 }
@@ -164,16 +172,18 @@ void SnapshotParser::EnqueueNode_(snapshot_distance_t* t) {
 }
 
 bool SnapshotParser::Filter_(int ordinal, int edge) {
-  int node_type = node_util->GetTypeForInt(ordinal, false);
+  if(!node_util->CheckOrdinalId(ordinal))
+    return false;
+  int node_type = node_util->GetTypeForInt(ordinal);
   if(node_type == snapshot_node::NodeTypes::KHIDDEN) {
     std::string edge_name = edge_util->GetNameOrIndex(edge, true);
-    std::string node_name = node_util->GetName(ordinal, false);
+    std::string node_name = node_util->GetName(ordinal);
     std::string slow_function_map_name = "sloppy_function_map";
     std::string native_context = "system / NativeContext";
     return (strcmp(edge_name.c_str(), slow_function_map_name.c_str()) != 0) || (strcmp(node_name.c_str(), native_context.c_str()) != 0);
   }
   if(node_type == snapshot_node::NodeTypes::KARRAY) {
-    std::string node_name = node_util->GetName(ordinal, false);
+    std::string node_name = node_util->GetName(ordinal);
     std::string map_descriptors_name = "(map descriptors)";
     if(strcmp(node_name.c_str(), map_descriptors_name.c_str()) != 0)
       return true;
@@ -187,24 +197,30 @@ bool SnapshotParser::Filter_(int ordinal, int edge) {
 void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only) {
   std::unordered_map<int, bool> visit_nodes;
   int gc_roots = -1;
-  int* edges = node_util->GetEdges(root_index, false);
-  int length = node_util->GetEdgeCount(root_index, false);
+  if(!node_util->CheckOrdinalId(root_index))
+    return;
+  int* edges = node_util->GetEdges(root_index);
+  int length = node_util->GetEdgeCount(root_index);
   for(int i = 0; i < length; i++) {
     int target_node = edge_util->GetTargetNode(*(edges + i), true);
-    std::string node_name = node_util->GetName(target_node, false);
+    if(!node_util->CheckOrdinalId(target_node))
+      continue;
+    std::string node_name = node_util->GetName(target_node);
     std::string gc_root_name = "(GC roots)";
     if(strcmp(node_name.c_str(), gc_root_name.c_str()) == 0) {
       gc_roots = target_node;
     }
   }
-  if(gc_roots == -1)
+  if(gc_roots == -1 || !node_util->CheckOrdinalId(gc_roots))
     return;
   if(user_root_only) {
     // iterator the "true" root, set user root distance 1 -> global
     for(int i = 0; i < length; i++) {
       int target_node = edge_util->GetTargetNode(*(edges + i), true);
-      std::string node_name = node_util->GetName(target_node, false);
-      int type = node_util->GetTypeForInt(target_node, false);
+      if(!node_util->CheckOrdinalId(target_node))
+        continue;
+      std::string node_name = node_util->GetName(target_node);
+      int type = node_util->GetTypeForInt(target_node);
       // type != synthetic, means user root
       if(type != snapshot_node::NodeTypes::KSYNTHETIC) {
         if(visit_nodes.count(target_node) == 0) {
@@ -233,14 +249,16 @@ void SnapshotParser::ForEachRoot_(void (*action)(snapshot_distance_t* t), snapsh
     //   }
     // }
   } else {
-    int* sub_root_edges = node_util->GetEdges(gc_roots, false);
-    int sub_root_edge_length = node_util->GetEdgeCount(gc_roots, false);
+    int* sub_root_edges = node_util->GetEdges(gc_roots);
+    int sub_root_edge_length = node_util->GetEdgeCount(gc_roots);
     for(int i = 0; i < sub_root_edge_length; i++) {
       int sub_root_ordinal = edge_util->GetTargetNode(*(sub_root_edges + i), true);
-      int* sub2_root_edges = node_util->GetEdges(sub_root_ordinal, false);
-      int sub2_root_edge_length = node_util->GetEdgeCount(sub_root_ordinal, false);
+      if(!node_util->CheckOrdinalId(sub_root_ordinal))
+        continue;
+      int* sub2_root_edges = node_util->GetEdges(sub_root_ordinal);
+      int sub2_root_edge_length = node_util->GetEdgeCount(sub_root_ordinal);
       bool need_add_gc_root = true;
-      std::string sub_root_name = node_util->GetName(sub_root_ordinal, false);
+      std::string sub_root_name = node_util->GetName(sub_root_ordinal);
       if(sub_root_name.compare("(Internalized strings)") == 0
           || sub_root_name.compare("(External strings)") == 0
           || sub_root_name.compare("(Smi roots)") == 0) {
@@ -289,9 +307,11 @@ void SnapshotParser::BFS_(int* node_to_visit, int node_to_visit_length) {
   int temp = 0;
   while(index < node_to_visit_length) {
     int ordinal = node_to_visit[index++];
+    if(!node_util->CheckOrdinalId(ordinal))
+      continue;
     int distance = node_distances_[ordinal] + 1;
-    int* edges = node_util->GetEdges(ordinal, false);
-    int edge_length = node_util->GetEdgeCount(ordinal, false);
+    int* edges = node_util->GetEdges(ordinal);
+    int edge_length = node_util->GetEdgeCount(ordinal);
     for(int i = 0; i < edge_length; i++) {
       int edge_type = edge_util->GetTypeForInt(*(edges + i), true);
       // ignore weak edge
@@ -360,9 +380,9 @@ void SnapshotParser::BuildDominatorTree() {
   BuildDominatorTree_(ptr);
   CalculateRetainedSizes_(ptr);
   // free memory
-  // delete[] ptr->post_order_index_to_ordinal;
-  // delete[] ptr->ordinal_to_post_order_index;
-  // delete ptr;
+  delete[] ptr->post_order_index_to_ordinal;
+  delete[] ptr->ordinal_to_post_order_index;
+  delete ptr;
 }
 
 bool SnapshotParser::IsEssentialEdge_(int ordinal, int type) {
@@ -391,10 +411,12 @@ void SnapshotParser::CalculateFlags_() {
       end_edge_index = first_edge_indexes[root_index + 1];
       edge_index < end_edge_index; edge_index += edge_field_length) {
     int target_node = edge_util->GetTargetNode(edge_index, true);
+    if(!node_util->CheckOrdinalId(target_node))
+      continue;
     int edge_type = edge_util->GetTypeForInt(edge_index, true);
     if(edge_type == snapshot_edge::EdgeTypes::KELEMENT) {
-      int node_type = node_util->GetTypeForInt(target_node, false);
-      std::string node_name = node_util->GetName(target_node, false);
+      int node_type = node_util->GetTypeForInt(target_node);
+      std::string node_name = node_util->GetName(target_node);
       if(!(node_type == snapshot_node::NodeTypes::KSYNTHETIC
            && node_name.compare("(Document DOM trees)") ==  0))
         continue;
@@ -579,20 +601,24 @@ void SnapshotParser::BuildDominatorTree_(snapshot_post_order_t* ptr) {
       }
     }
   }
-  dominator_tree_ = new int[node_count]();
+  dominators_tree_ = new int[node_count]();
   for (int post_order_index = 0, l = node_count; post_order_index < l; ++post_order_index) {
     ordinal = ptr->post_order_index_to_ordinal[post_order_index];
-    dominator_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
+    dominators_tree_[ordinal] = ptr->post_order_index_to_ordinal[dominators[post_order_index]];
   }
 }
 
 void SnapshotParser::CalculateRetainedSizes_(snapshot_post_order_t* ptr) {
   retained_sizes_ = new int[node_count]();
-  for (int ordinal = 0; ordinal < node_count; ++ordinal)
-    retained_sizes_[ordinal] = node_util->GetSelfSize(ordinal, false);
+  for (int ordinal = 0; ordinal < node_count; ++ordinal) {
+    if(!node_util->CheckOrdinalId(ordinal))
+      continue;
+    retained_sizes_[ordinal] = node_util->GetSelfSize(ordinal);
+  }
   for (int post_order_index = 0; post_order_index < node_count - 1; ++post_order_index) {
     int ordinal = ptr->post_order_index_to_ordinal[post_order_index];
-    int dominator_ordinal = dominator_tree_[ordinal];
+    // dominator_ordinal immediately dominated ordinal
+    int dominator_ordinal = dominators_tree_[ordinal];
     retained_sizes_[dominator_ordinal] += retained_sizes_[ordinal];
   }
 }
@@ -600,8 +626,8 @@ void SnapshotParser::CalculateRetainedSizes_(snapshot_post_order_t* ptr) {
 int* SnapshotParser::GetSortedEdges(int id) {
   if(ordered_edges_map_.count(id) != 0)
     return ordered_edges_map_.at(id);
-  int* edges = node_util->GetEdges(id, false);
-  int length = node_util->GetEdgeCount(id, false);
+  int* edges = node_util->GetEdges(id);
+  int length = node_util->GetEdgeCount(id);
   std::sort(edges, edges + length, [this](int lhs, int rhs) {
     int lhs_ordinal = this->edge_util->GetTargetNode(lhs, true);
     int lhs_retained_size = this->retained_sizes_[lhs_ordinal];
@@ -611,5 +637,74 @@ int* SnapshotParser::GetSortedEdges(int id) {
   });
   ordered_edges_map_.insert(OrderedEdgesMap::value_type(id, edges));
   return edges;
+}
+
+void SnapshotParser::MarkEdge_(int ordinal) {
+  if(!node_util->CheckOrdinalId(ordinal))
+    return;
+  int length = node_util->GetEdgeCount(ordinal);
+  int* edges = node_util->GetEdges(ordinal);
+  for(int i = 0; i < length; i++) {
+    int edge = *(edges + i);
+    int child = edge_util->GetTargetNode(edge, true);
+    long long key =  (static_cast<long long>(ordinal) << 32) + child;
+    edge_searching_map_.insert(EdgeSearchingMap::value_type(key, edge));
+  }
+  delete[] edges;
+}
+
+snapshot_dominates_t* SnapshotParser::GetSortedDominates(int id) {
+  if(ordered_dominates_map_.count(id) != 0) {
+    return ordered_dominates_map_.at(id);
+  }
+  snapshot_dominates_t* doms = new snapshot_dominates_t;
+  int length = 0;
+  for(int ordinal = 0; ordinal < node_count; ordinal++) {
+    if(ordinal != root_index &&  dominators_tree_[ordinal] == id)
+      length++;
+  }
+  doms->length = length;
+  snapshot_dominate_t** dominates = new snapshot_dominate_t*[length];
+  for(int ordinal = 0; ordinal < node_count; ordinal++) {
+    if(ordinal != root_index &&  dominators_tree_[ordinal] == id) {
+      MarkEdge_(ordinal);
+      snapshot_dominate_t* dominate = new snapshot_dominate_t;
+      dominate->dominate = ordinal;
+      dominate->edge = GetEdgeByParentAndChild_(id, ordinal);
+      dominates[--length] = dominate;
+    }
+  }
+  std::sort(dominates, dominates + doms->length, [this](snapshot_dominate_t* lhs, snapshot_dominate_t* rhs) {
+    int lhs_retained_size = this->retained_sizes_[lhs->dominate];
+    int rhs_retained_size = this->retained_sizes_[rhs->dominate];
+    // if(lhs_retained_size == rhs_retained_size && lhs->edge != -1 && rhs->edge != -1) {
+    //   int lhs_type = edge_util->GetTypeForInt(lhs->edge, true);
+    //   int rhs_type = edge_util->GetTypeForInt(rhs->edge, true);
+    //   if(lhs_type == snapshot_edge::EdgeTypes::KELEMENT && rhs_type == snapshot_edge::EdgeTypes::KELEMENT) {
+    //     std::string lhs_edge_name = edge_util->GetNameOrIndex(lhs->edge, true);
+    //     std::string rhs_edge_name = edge_util->GetNameOrIndex(rhs->edge, true);
+    //     int lhs_index = atoi(lhs_edge_name.c_str() + 1);
+    //     int rhs_index = atoi(rhs_edge_name.c_str() + 1);
+    //     return lhs_index > rhs_index;
+    //   }
+    // }
+    return lhs_retained_size > rhs_retained_size;
+  });
+  doms->dominates = dominates;
+  ordered_dominates_map_.insert(OrderedDominatesMap::value_type(id, doms));
+  return doms;
+}
+
+int SnapshotParser::GetEdgeByParentAndChild_(int parent, int child) {
+  long long key = (static_cast<long long>(parent) << 32) + child;
+  if (edge_searching_map_.count(key) == 0)
+    return -1;
+  return edge_searching_map_.at(key);
+}
+
+int SnapshotParser::GetImmediateDominator(int id) {
+  if(id >= node_count)
+    return -1;
+  return dominators_tree_[id];
 }
 }

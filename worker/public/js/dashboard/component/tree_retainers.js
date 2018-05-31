@@ -6,27 +6,40 @@
         props: { label: 'name', isLeaf: 'exists' },
         node: {},
         type: 'retainers',
-        loadMoreStatus: { b1: false, b2: false, b3: false },
-        limit: Devtoolx.limit
+        loadMoreStatus: { b1: false, b2: false, b3: false, b4: false },
+        limit: Devtoolx.limit,
+        tooltipType: 'normal',
+        customizeStart: 0,
+        showCustomizeStart: false
       }
     },
-    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle', 'getAdditional'],
+    props: ['rootid', 'nodeData', 'getNode', 'formatSize', 'getEdgeType', 'getTitle',
+      'getAdditional', 'contextmenu', 'tooltipStyle', 'nodeClick', 'tooltipData'],
     methods: {
+      isString(data) {
+        return data.type === 'concatenated string' || data.type === 'sliced string' || data.type === 'string';
+      },
       formatNode(data, retainer, raw) {
         raw = raw || {};
         raw.id = data.id;
         raw.key = `${Math.random().toString(36).substr(2)}`;
         if (data.type === 'array') data.name = `${data.name || ''}[]`;
         if (data.type === 'closure') data.name = `${data.name || ''}()`;
+        if (this.isString(data) && !data.name.startsWith('"')) data.name = `"${data.name || ''}"`;
         if (typeof data.name === 'string' && data.name.length > 100)
           raw.name = data.name.substr(0, 100);
         else
           raw.name = data.name;
-        raw.nameClass = data.is_gcroot && 'node-name node-gcroot' || 'node-name';
+        raw.rawName = data.name;
+        raw.nameClass = 'node-name';
+        if (this.isString(data))
+          raw.nameClass = `${raw.nameClass} string`;
         if (data.type === 'closure')
           raw.nameClass = `${raw.nameClass} closure`;
+        if (data.is_gcroot)
+          raw.nameClass = `${raw.nameClass} node-gcroot`;
         raw.address = data.address;
-        raw.self_size = data.self_size;
+        raw.selfSize = data.self_size;
         raw.nodeType = data.type;
         raw.retainedSize = data.retained_size;
         raw.distance = data.distance;
@@ -46,6 +59,7 @@
           }
           raw.fromEdge = `${retainer.name_or_index}`;
           raw.edgeType = retainer.type;
+          raw.index = retainer.index;
         }
         return raw;
       },
@@ -91,10 +105,10 @@
           }
         }
       },
-      loadMore(node, rawdata, number) {
+      loadMore(node, rawdata, number, customize) {
         var vm = this;
         var p = null;
-        var setKey = number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
+        var setKey = customize && 'b4' || number / Devtoolx.limit === 2 && 'b1' || number / Devtoolx.limit === 4 && 'b2' || 'b3';
         vm.$set(vm.loadMoreStatus, setKey, true);
         vm.getNode(`/ordinal/${rawdata.id}?current=${rawdata.retainersCurrent}&limit=${number}&type=retainers`)
           .then(parent => {
@@ -116,6 +130,25 @@
             }
             vm.$set(vm.loadMoreStatus, setKey, false);
           }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
+      },
+      uniqueContextmenu(event, data, node, component) {
+        return false;
+      },
+      uniqueNodeClick() {
+        this.showCustomizeStart = false;
+        this.customizeStart = 0;
+        this.nodeClick();
+      },
+      jump(node, rawdata) {
+        if (this.showCustomizeStart) {
+          if (isNaN(this.customizeStart)) {
+
+          } else
+            rawdata.retainersCurrent = Number(this.customizeStart) + Number(rawdata.retainersCurrent);
+          this.loadMore(node, rawdata, this.limit * 2, true);
+        } else {
+          this.showCustomizeStart = true;
+        }
       }
     },
     watch: {

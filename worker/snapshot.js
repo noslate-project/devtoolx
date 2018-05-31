@@ -60,6 +60,29 @@ function createServer(snapshot) {
     }
   });
 
+  app.get('/dominates/:id', (req, res) => {
+    try {
+      let id = parseInt(req.params.id);
+      let current = !isNaN(req.query.current) && parseInt(req.query.current);
+      let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
+      let dominates = parser.getDominatorByIDom(id, current, limit);
+      res.json({ ok: true, data: dominates });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
+  app.get('/repeat/parend_id/:parend_id/child_id/:child_id', (req, res) => {
+    try {
+      let parendId = !isNaN(req.params.parend_id) && parseInt(req.params.parend_id);
+      let childId = !isNaN(req.params.child_id) && parseInt(req.params.child_id);
+      let repeat = parser.getChildRepeat(parendId, childId, req.query.type);
+      res.json({ ok: true, data: repeat });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
   return app;
 }
 
