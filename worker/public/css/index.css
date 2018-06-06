@@ -62,11 +62,13 @@
 }
 
 .statistics{
+  position: relative;
   font-family: Menlo;
   margin-left: 20px;
   margin-bottom: 0px;
   margin-top: 23px;
   font-size: 15px;
+  z-index:999;
 }
 
 .statistics-value{

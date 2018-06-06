@@ -2,7 +2,8 @@
   Devtoolx.limit = 25;
   Devtoolx.ratioLimit = 0.2;
   Devtoolx.tooltipsTyleSource = 'position:absolute;display:block;font-size:1.0em;'
-    + 'border:1px solid #ccc;font-family:Menlo;';
+    + 'border:1px solid #ccc;font-family:Menlo;'
+    + 'left:0px;top:20px;z-index:0;';
   Vue.component('my-tootip', Devtoolx.ToolTip);
   new Vue({
     el: '#app',
@@ -59,6 +60,7 @@
         task.then(data => {
           Object.assign(vm.nodeData, data)
           vm.rootid = data.id;
+          vm.cancelTooltip();
         }).catch(err => vm.$message.error(err.message || 'Server Inner Error'));
       },
       getNode(url, method) {
@@ -127,7 +129,7 @@
         this.tooltipStyle = Devtoolx.tooltipsTyleSource + 'opacity:0.0;';
       },
       nodeClick() {
-        this.tooltipStyle = Devtoolx.tooltipsTyleSource + 'opacity:0.0;';
+        this.cancelTooltip();
       }
     },
     computed: {
