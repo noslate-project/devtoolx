@@ -20,7 +20,7 @@
             v-model="address" @focus="cleanInput">
         </el-input>
         <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
-        <p class="content" style="margin-left:20px;height:5px">Edges:</p>
+        <p class="content" style="margin-left:20px;margin-top:20px;height:5px">Edges:</p>
         <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
             :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle"
             :node-click="nodeClick" :tooltip-data="tooltipData"></tree-edges>
