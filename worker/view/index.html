@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/css/element.css">
+    <link rel="stylesheet" href="/css/bootstrap.css">
     <link rel="stylesheet" href="/css/index.css">
 </head>
 
@@ -19,23 +20,31 @@
             v-model="address" @focus="cleanInput">
         </el-input>
         <el-button style="margin-left:5px" type="primary" icon="el-icon-search" circle @click="searchIdByAddress"></el-button>
-        <p class="content" style="margin-left:20px;height:5px">Edges:</p>
+        <p class="content" style="margin-left:20px;margin-top:20px;height:5px">Edges:</p>
         <tree-edges style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-edges>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle"
+            :node-click="nodeClick" :tooltip-data="tooltipData"></tree-edges>
         <p class="content" style="margin-left:20px;height:5px;margin-top:20px">Retainers:</p>
         <tree-retainers style="margin-left:15px" :rootid="rootid" :node-data="nodeData" :get-node="getNode" :format-size="formatSize"
-            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional"></tree-retainers>
+            :get-edge-type="getEdgeType" :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle"
+            :node-click="nodeClick" :tooltip-data="tooltipData"></tree-retainers>
+        <p class="content" style="margin-left:20px;height:5px;margin-top:20px">DominatorsTree:</p>
+        <tree-dominators style="margin-left:15px" :rootid="rootid" :get-node="getNode" :format-size="formatSize" :get-edge-type="getEdgeType"
+            :get-title="getTitle" :get-additional="getAdditional" :contextmenu="contextmenu" :tooltip-style="tooltipStyle" :node-click="nodeClick"
+            :tooltip-data="tooltipData"></tree-dominators>
+        <my-tootip :tooltip-style="tooltipStyle" :tooltip-data="tooltipData" :get-node="getNode" :format-size="formatSize"></my-tootip>
     </div>
 </body>
 
 <script type="text/template" id="tree-template">
     <div>
-        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy>
+        <el-tree style="margin-top:20px" :load="loadNode" :props="props" node-key="key" draggable lazy @node-contextmenu="uniqueContextmenu"
+            @node-click="uniqueNodeClick">
             <span class="custom-tree-node content" slot-scope="{ node, data }" disabled>
             <span v-if="!node.data.loadMore">
             <span v-if="node.data.fromEdge" :class="node.data.class">
                 <strong :class="node.data.edgeClass" :title="getEdgeType(node)">{{ node.data.fromEdge }}</strong>
-                <small v-if="type === 'edges'" class="address">::</small>
+                <small v-if="type === 'edges' || type === 'dominators'" class="address">::</small>
                 <strong v-if="type === 'retainers'" class="address">in</strong>
             </span>
             <span :class="node.data.class">
@@ -44,27 +53,43 @@
                 <small class="additional" v-html="getAdditional(node)"></small>
             </span>
             </span>
-            <span v-if="node.data.loadMore">
+            <span v-if="node.data.loadMore" @click.stop="">
                 <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit * 2)" :loading="loadMoreStatus.b1">
                     +{{ limit * 2 }}
                 </el-button>
                 <el-button plain size="small" class="more-button" @click="loadMore(node, data, limit * 4)" :loading="loadMoreStatus.b2">
                     +{{ limit * 4 }}
                 </el-button>
-                <el-button plain size="small" class="more-button" @click="loadMore(node, data, node.data.edgesLeft || node.data.retainersLeft)" :loading="loadMoreStatus.b3">
-                    + left {{ node.data.edgesLeft || node.data.retainersLeft }}
+                <el-button plain size="small" class="more-button" 
+                @click="loadMore(node, data, node.data.edgesLeft || node.data.retainersLeft || node.data.dominatesLeft)" 
+                :loading="loadMoreStatus.b3">
+                    + left {{ node.data.edgesLeft || node.data.retainersLeft || node.data.dominatesLeft }}
                 </el-button>
+                <input v-if="showCustomizeStart" type="text" class="customize-start" v-model="customizeStart"></input>
+                <el-button plain size="small" class="more-button" @click="jump(node, data)" :loading="loadMoreStatus.b4">jump</el-button>
             </span>
             </span>
         </el-tree>
     </div>
 </script>
 
+<script type="text/template" id="tooltip-template">
+    <div>
+        <ul class="dropdown-menu" :style="tooltipStyle">
+            <li class="tooltip-menu">
+                <span style="color:rgb(48, 57, 66)" @click.stop="noop" :loading="repeatLoading" v-html="showRepeat"></span>
+            </li>
+        </ul>
+    </div>
+</script>
+
 <script src="/js/library/vue.js"></script>
 <script src="/js/library/element.js"></script>
 <script src="/js/library/axios.min.js"></script>
+<script src="/js/dashboard/component/tooltip.js"></script>
 <script src="/js/dashboard/component/tree_edges.js"></script>
 <script src="/js/dashboard/component/tree_retainers.js"></script>
+<script src="/js/dashboard/component/tree_dominators.js"></script>
 <script src="/js/dashboard/index.js"></script>
 
 </html>

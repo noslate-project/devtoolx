@@ -39,7 +39,6 @@ void Parser::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getStatistics", GetStatistics);
   Nan::SetPrototypeMethod(tpl, "getDominatorByIDom", GetDominatorByIDom);
   Nan::SetPrototypeMethod(tpl, "getChildRepeat", GetChildRepeat);
-  Nan::SetPrototypeMethod(tpl, "getConsStringName", GetConsStringName);
 
   constructor.Reset(tpl->GetFunction());
   exports->Set(Nan::New("V8Parser").ToLocalChecked(), tpl->GetFunction());
@@ -70,21 +69,35 @@ void Parser::New(const Nan::FunctionCallbackInfo<Value>& info) {
 void Parser::Parse(const Nan::FunctionCallbackInfo<Value>& info) {
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
   // get json from heapsnapshot
+  int64_t st = uv_hrtime();
   std::ifstream jsonfile(parser->filename_);
+  printf("ifstream cost: %fs\n", (uv_hrtime() - st) / 10e8);
   json profile;
+  st = uv_hrtime();
   jsonfile >> profile;
+  printf("json parse cost: %fs\n", (uv_hrtime() - st) / 10e8);
   jsonfile.close();
   // get snapshot parser
+  st = uv_hrtime();
   parser->snapshot_parser = new snapshot_parser::SnapshotParser(profile);
+  printf("init cost: %fs\n", (uv_hrtime() - st) / 10e8);
   if(info[0]->IsObject()) {
     Local<Object> options = info[0]->ToObject();
     Nan::Utf8String mode(options->Get(Nan::New<String>("mode").ToLocalChecked()));
     std::string mode_search = "search";
     if(strcmp(*mode, mode_search.c_str()) == 0) {
+      st = uv_hrtime();
       parser->snapshot_parser->CreateAddressMap();
+      printf("create address map cost: %fs\n", (uv_hrtime() - st) / 10e8);
+      st = uv_hrtime();
       parser->snapshot_parser->BuildTotalRetainer();
+      printf("build total retainer cost: %fs\n", (uv_hrtime() - st) / 10e8);
+      st = uv_hrtime();
       parser->snapshot_parser->BuildDistances();
+      printf("build distance cost: %fs\n", (uv_hrtime() - st) / 10e8);
+      st = uv_hrtime();
       parser->snapshot_parser->BuildDominatorTree();
+      printf("build dominator tree: %fs\n", (uv_hrtime() - st) / 10e8);
     }
   }
 }
@@ -96,12 +109,7 @@ Local<Object> Parser::SetNormalInfo_(int id) {
   node->Set(Nan::New<String>("id").ToLocalChecked(), Nan::New<Number>(id));
   std::string type = snapshot_parser->node_util->GetType(id);
   node->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(type).ToLocalChecked());
-  int type_int = snapshot_parser->node_util->GetTypeForInt(id);
-  std::string name;
-  if(type_int == snapshot_node::NodeTypes::KCONCATENATED_STRING)
-    name = snapshot_parser->node_util->GetConsStringName(id);
-  else
-    name = snapshot_parser->node_util->GetName(id);
+  std::string name = snapshot_parser->node_util->GetName(id);
   node->Set(Nan::New<String>("name").ToLocalChecked(), Nan::New<String>(name).ToLocalChecked());
   std::string address = "@" + std::to_string(snapshot_parser->node_util->GetAddress(id));
   node->Set(Nan::New<String>("address").ToLocalChecked(), Nan::New<String>(address).ToLocalChecked());
@@ -122,12 +130,8 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
   Local<Object> node = SetNormalInfo_(id);
   // get edges
   if(get_node_type == KALL || get_node_type == KEDGES) {
-    if(!snapshot_parser->node_util->CheckOrdinalId(id)) {
-      Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
-      return node;
-    }
     int* edges_local = snapshot_parser->GetSortedEdges(id);
-    int edges_length = snapshot_parser->node_util->GetEdgeCount(id);
+    int edges_length = snapshot_parser->node_util->GetEdgeCount(id, false);
     int start_edge_index = current;
     int stop_edge_index = current + limit;
     if(start_edge_index >= edges_length) {
@@ -148,7 +152,6 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       edge->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       edge->Set(Nan::New<String>("to_node").ToLocalChecked(), Nan::New<Number>(to_node));
       edge->Set(Nan::New<String>("idomed").ToLocalChecked(), Nan::New<Boolean>(idomed));
-      edge->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
       edges->Set((i - start_edge_index), edge);
     }
     if(stop_edge_index < edges_length) {
@@ -183,7 +186,6 @@ Local<Object> Parser::GetNodeById_(int id, int current, int limit, GetNodeTypes 
       retainer->Set(Nan::New<String>("type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
       retainer->Set(Nan::New<String>("name_or_index").ToLocalChecked(), Nan::New<String>(name_or_index).ToLocalChecked());
       retainer->Set(Nan::New<String>("from_node").ToLocalChecked(), Nan::New<Number>(node));
-      retainer->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
       retainers->Set((i - start_retainer_index), retainer);
     }
     if(stop_retainer_index < retainers_length) {
@@ -251,7 +253,7 @@ void Parser::GetNodeByOrdinalId(const Nan::FunctionCallbackInfo<Value>& info) {
       break;
     }
     if(!info[2]->IsNumber()) {
-      limit = parser->snapshot_parser->node_util->GetEdgeCount(id);
+      limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
     }
     nodes->Set(i, parser->GetNodeById_(id, current, limit, type));
   }
@@ -285,7 +287,7 @@ void Parser::GetNodeByAddress(const Nan::FunctionCallbackInfo<Value>& info) {
   if(info[1]->IsNumber()) {
     current = static_cast<int>(info[1]->ToInteger()->Value());
   }
-  int limit = parser->snapshot_parser->node_util->GetEdgeCount(id);
+  int limit = parser->snapshot_parser->node_util->GetEdgeCount(id, false);
   if(info[2]->IsNumber()) {
     limit = static_cast<int>(info[2]->ToInteger()->Value());
   }
@@ -362,7 +364,6 @@ void Parser::GetDominatorByIDom(const Nan::FunctionCallbackInfo<v8::Value>& info
       std::string edge_type = parser->snapshot_parser->edge_util->GetType(sdom->edge, true);
       node->Set(Nan::New<String>("edge_type").ToLocalChecked(), Nan::New<String>(edge_type).ToLocalChecked());
     }
-    node->Set(Nan::New<String>("index").ToLocalChecked(), Nan::New<Number>(i));
     dominates->Set((i - current), node);
   }
   Local<Object> result = Nan::New<Object>();
@@ -384,13 +385,8 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
   int parent_id = info[0]->ToInteger()->Value();
   int child_id = info[1]->ToInteger()->Value();
-  if(!parser->snapshot_parser->node_util->CheckOrdinalId(child_id) ||
-      !parser->snapshot_parser->node_util->CheckOrdinalId(parent_id)) {
-    Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
-    return;
-  }
-  int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id);
-  int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id);
+  int child_name = parser->snapshot_parser->node_util->GetNameForInt(child_id, false);
+  int child_self_size = parser->snapshot_parser->node_util->GetSelfSize(child_id, false);
   int child_distance = parser->snapshot_parser->GetDistance(child_id);
   // search
   int count = 0;
@@ -407,10 +403,8 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
       for(int i = 0; i < childs_length; i++) {
         snapshot_dominate_t* child = *(childs + i);
         int target_node = child->dominate;
-        if(!parser->snapshot_parser->node_util->CheckOrdinalId(target_node))
-          continue;
-        int name = parser->snapshot_parser->node_util->GetNameForInt(target_node);
-        int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node);
+        int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
+        int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
         int distance = parser->snapshot_parser->GetDistance(target_node);
         if(name == child_name && self_size == child_self_size
             && child_distance == distance) {
@@ -421,14 +415,12 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
     }
   }
   if(!done) {
-    int childs_length = parser->snapshot_parser->node_util->GetEdgeCount(parent_id);
+    int childs_length = parser->snapshot_parser->node_util->GetEdgeCount(parent_id, false);
     int* childs = parser->snapshot_parser->GetSortedEdges(parent_id);
     for(int i = 0; i < childs_length; i++) {
       int target_node = parser->snapshot_parser->edge_util->GetTargetNode(*(childs + i), true);
-      if(!parser->snapshot_parser->node_util->CheckOrdinalId(target_node))
-        continue;
-      int name = parser->snapshot_parser->node_util->GetNameForInt(target_node);
-      int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node);
+      int name = parser->snapshot_parser->node_util->GetNameForInt(target_node, false);
+      int self_size = parser->snapshot_parser->node_util->GetSelfSize(target_node, false);
       int distance = parser->snapshot_parser->GetDistance(target_node);
       if(name == child_name && self_size == child_self_size
           && child_distance == distance) {
@@ -441,21 +433,5 @@ void Parser::GetChildRepeat(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   result->Set(Nan::New<String>("count").ToLocalChecked(), Nan::New<Number>(count));
   result->Set(Nan::New<String>("total_retained_size").ToLocalChecked(), Nan::New<Number>(total_retained_size));
   info.GetReturnValue().Set(result);
-}
-
-void Parser::GetConsStringName(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-  if(!info[0]->IsNumber()) {
-    Nan::ThrowTypeError(Nan::New<String>("argument 0 must be number!").ToLocalChecked());
-    return;
-  }
-  Parser* parser = ObjectWrap::Unwrap<Parser>(info.Holder());
-  int id = info[0]->ToInteger()->Value();
-  if(!parser->snapshot_parser->node_util->CheckOrdinalId(id)) {
-    Nan::ThrowTypeError(Nan::New<String>("argument 0 is wrong!").ToLocalChecked());
-    return;
-  }
-  Local<String> cons_name = Nan::New<String>(parser->snapshot_parser->node_util
-                            ->GetConsStringName(id)).ToLocalChecked();
-  info.GetReturnValue().Set(cons_name);
 }
 }

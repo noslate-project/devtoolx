@@ -27,6 +27,7 @@ public:
   std::string GetType(int id, bool source);
   int GetTypeForInt(int id, bool source);
   std::string GetNameOrIndex(int id, bool source);
+  int GetNameOrIndexForInt(int id, bool source);
   int GetTargetNode(int id, bool source);
 private:
   snapshot_parser::SnapshotParser* parser_;
