@@ -17,7 +17,8 @@ std::string Node::GetConsStringName(int id) {
   while(length > 0 && name.length() < 256) {
     int index = node_stack[--length];
     if(GetTypeForInt(index) != KCONCATENATED_STRING) {
-      name += strings[static_cast<int>(parser_->nodes[index * parser_->node_field_length + parser_->node_name_offset])];
+      std::string cons = strings[static_cast<int>(parser_->nodes[index * parser_->node_field_length + parser_->node_name_offset])];
+      name += cons;
       continue;
     }
     int* edges = GetEdges(index);
