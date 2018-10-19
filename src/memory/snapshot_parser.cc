@@ -51,7 +51,8 @@ void SnapshotParser::FillArray_(int* array, int length, int fill) {
 }
 
 int* SnapshotParser::GetFirstEdgeIndexes_() {
-  int* first_edge_indexes = new int[node_count]();
+  int* first_edge_indexes = new int[node_count + 1]();
+  first_edge_indexes[node_count] = edges.size();
   for(int node_ordinal = 0, edge_index = 0; node_ordinal < node_count; node_ordinal++) {
     first_edge_indexes[node_ordinal] = edge_index;
     int offset = static_cast<int>(nodes[node_ordinal * node_field_length + node_edge_count_offset]) * edge_field_length;
@@ -119,6 +120,7 @@ void SnapshotParser::BuildTotalRetainer() {
   for(int src_node_ordinal = 0; src_node_ordinal < node_count; src_node_ordinal++) {
     int first_edge_index = next_node_first_edge_index;
     next_node_first_edge_index = first_edge_indexes[src_node_ordinal + 1];
+    printf("(%d ~ %d) %lu\n", first_edge_index, next_node_first_edge_index, edges.size());
     for(int edge_index = first_edge_index; edge_index < next_node_first_edge_index; edge_index += edge_field_length) {
       int to_node_index = static_cast<int>(edges[edge_index + edge_to_node_offset]);
       if(to_node_index % node_field_length != 0) {
