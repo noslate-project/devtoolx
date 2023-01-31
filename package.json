@@ -16,7 +16,10 @@
     "README.md",
     "util.js"
   ],
-  "scripts": {},
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "lint": "clang-format --version && clang-format -i --glob=\"src/**/!(json)[.hpp]\""
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hyj1991/devtoolx.git"

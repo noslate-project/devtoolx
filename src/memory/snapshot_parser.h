@@ -1,10 +1,12 @@
 #include <nan.h>
+
 #include <iostream>
 #include <unordered_map>
-#include "node.h"
-#include "edge.h"
-#include "tarjan.h"
+
 #include "../library/json.hpp"
+#include "edge.h"
+#include "node.h"
+#include "tarjan.h"
 
 #ifndef __SNAPSHOT_PARSER_H_
 #define __SNAPSHOT_PARSER_H_
@@ -12,10 +14,7 @@
 namespace snapshot_parser {
 using nlohmann::json;
 
-enum DOMINATOR_ALGORITHM {
-  TARJAN,
-  DATA_ITERATION
-};
+enum DOMINATOR_ALGORITHM { TARJAN, DATA_ITERATION };
 
 typedef struct SnapshotDistance {
   int distance;
@@ -56,7 +55,7 @@ const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
 
 class SnapshotParser {
-public:
+ public:
   explicit SnapshotParser(json profile);
   ~SnapshotParser();
   void CreateAddressMap();
@@ -100,10 +99,11 @@ public:
   snapshot_edge::Edge* edge_util;
   int gcroots;
 
-private:
+ private:
   int* GetFirstEdgeIndexes_();
   static void EnqueueNode_(snapshot_distance_t* t);
-  void ForEachRoot_(void (*action)(snapshot_distance_t* t), snapshot_distance_t* user_root, bool user_root_only);
+  void ForEachRoot_(void (*action)(snapshot_distance_t* t),
+                    snapshot_distance_t* user_root, bool user_root_only);
   void BFS_(int* node_to_visit, int node_to_visit_length);
   bool Filter_(int ordinal, int edge);
   static void FillArray_(int* array, int length, int fill);
@@ -147,6 +147,6 @@ private:
   // algorithm
   DOMINATOR_ALGORITHM algorithm_ = DOMINATOR_ALGORITHM::DATA_ITERATION;
 };
-}
+}  // namespace snapshot_parser
 
 #endif

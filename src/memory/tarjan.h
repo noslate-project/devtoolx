@@ -1,5 +1,5 @@
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #ifndef __TARJAN_H_
 #define __TARJAN_H_
@@ -24,22 +24,22 @@ typedef struct TarjanBoundList {
 } tarjan_bound_list_t;
 
 class TarJan {
-public:
-  explicit TarJan(tarjan_bound_list_t *data);
+ public:
+  explicit TarJan(tarjan_bound_list_t* data);
   ~TarJan();
   int length;
   int root;
   // middle variables
-  int *dfs;
-  int *vertex;
-  int *semi;
-  int *parent;
+  int* dfs;
+  int* vertex;
+  int* semi;
+  int* parent;
   BoundListMap bucket;
-  int *dom;
-  int *ancestor;
-  int *label;
-  int *size;
-  int *child;
+  int* dom;
+  int* ancestor;
+  int* label;
+  int* size;
+  int* child;
   BoundListMap inbounds;
   BoundListMap outbounds;
   // calculate
@@ -47,15 +47,15 @@ public:
   void ClearMiddleVariables();
   // results
   BoundListMap dominators;
-  int *idominator;
+  int* idominator;
 
-private:
+ private:
   void Enumerate_();
   void Build_();
   int Evaluate_(int v);
   void Compress_(int v);
   void Link_(int v, int w);
 };
-} // namespace tarjan
+}  // namespace tarjan
 
 #endif

@@ -21,7 +21,7 @@ enum EdgeTypes {
 };
 
 class Edge {
-public:
+ public:
   explicit Edge(snapshot_parser::SnapshotParser* parser);
   ~Edge();
   std::string GetType(int id, bool source);
@@ -29,9 +29,10 @@ public:
   std::string GetNameOrIndex(int id, bool source);
   int GetNameOrIndexForInt(int id, bool source);
   int GetTargetNode(int id, bool source);
-private:
+
+ private:
   snapshot_parser::SnapshotParser* parser_;
 };
-}
+}  // namespace snapshot_edge
 
 #endif
