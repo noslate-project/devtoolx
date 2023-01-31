@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "node.h"
 #include "edge.h"
+#include "tarjan.h"
 #include "../library/json.hpp"
 
 #ifndef __SNAPSHOT_PARSER_H_
@@ -11,7 +12,12 @@
 namespace snapshot_parser {
 using nlohmann::json;
 
-typedef struct  {
+enum DOMINATOR_ALGORITHM {
+  TARJAN,
+  DATA_ITERATION
+};
+
+typedef struct SnapshotDistance {
   int distance;
   int ordinal;
   int* node_to_visit;
@@ -19,20 +25,32 @@ typedef struct  {
   int* node_distances_;
 } snapshot_distance_t;
 
-typedef struct {
+typedef struct SnapshotRetainer {
   int ordinal;
   int edge;
 } snapshot_retainer_t;
 
-typedef struct {
+typedef struct SnapshotPostOrder {
   int* post_order_index_to_ordinal;
   int* ordinal_to_post_order_index;
 } snapshot_post_order_t;
 
+typedef struct SnapshotDominate {
+  int dominate;
+  int edge = -1;
+} snapshot_dominate_t;
+
+typedef struct SnapshotDominates {
+  snapshot_dominate_t** dominates = nullptr;
+  int length = 0;
+} snapshot_dominates_t;
+
 typedef std::unordered_map<long, int> AddressMap;
 typedef std::unordered_map<int, bool> GCRootsMap;
+typedef std::unordered_map<long long, int> EdgeSearchingMap;
 typedef std::unordered_map<int, snapshot_retainer_t**> OrderedRetainersMap;
 typedef std::unordered_map<int, int*> OrderedEdgesMap;
+typedef std::unordered_map<int, snapshot_dominates_t*> OrderedDominatesMap;
 
 const int NO_DISTANCE = -5;
 const int BASE_SYSTEMDISTANCE = 100000000;
@@ -53,6 +71,9 @@ public:
   void BuildDominatorTree();
   int GetRetainedSize(int id);
   int* GetSortedEdges(int id);
+  snapshot_dominates_t* GetSortedDominates(int id);
+  int GetImmediateDominator(int id);
+  void SetAlgorithm(DOMINATOR_ALGORITHM algo);
   json nodes;
   json edges;
   json strings;
@@ -89,18 +110,25 @@ private:
   void CalculateFlags_();
   static int IndexOf_(json array, std::string target);
   snapshot_post_order_t* BuildPostOrderIndex_();
+  void BuildDominatorTree_();
   void BuildDominatorTree_(snapshot_post_order_t* ptr);
   void CalculateRetainedSizes_(snapshot_post_order_t* ptr);
   bool IsEssentialEdge_(int ordinal, int type);
   bool HasOnlyWeakRetainers_(int ordinal);
+  int GetEdgeByParentAndChild_(int parent, int child);
+  void MarkEdge_(int ordinal);
   // address -> node ordinal id
   AddressMap address_map_;
   // ordinal id -> bool
   GCRootsMap gcroots_map_;
+  // (std::to_string(parent)+std::toString(child)) -> source edge index
+  EdgeSearchingMap edge_searching_map_;
   // ordinal id -> ordered retainers
   OrderedRetainersMap ordered_retainers_map_;
   // ordinal id -> ordered edges
   OrderedEdgesMap ordered_edges_map_;
+  // ordinal id -> ordered dominates map
+  OrderedDominatesMap ordered_dominates_map_;
   // total retainers
   int* retaining_nodes_;
   int* retaining_edges_;
@@ -112,9 +140,12 @@ private:
   // detached dom flag & queried object flag are temporarily ignored
   int page_object_flag_ = 4;
   // dominator tree
-  int* dominator_tree_;
+  int* dominators_tree_;
+  tarjan::BoundListMap dominators_;
   // retained sizes
   int* retained_sizes_;
+  // algorithm
+  DOMINATOR_ALGORITHM algorithm_ = DOMINATOR_ALGORITHM::DATA_ITERATION;
 };
 }
 

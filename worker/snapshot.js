@@ -5,12 +5,48 @@ const bodyParser = require('body-parser');
 const serverFavicon = require('serve-favicon');
 const compression = require('compression');
 const devtoolx = require('..');
+const logger = require('../util').logger;
+const formatTime = require('../util').formatTime;
 const heapTools = devtoolx.heapTools;
 const V8Parser = heapTools.V8Parser;
 
-function createServer(snapshot) {
+function checkOptions(options) {
+  let method = options.method;
+  if (method && (method !== 'tarjan') && method !== 'data_iteration') {
+    throw new Error(`not support method ${method}!`);
+  }
+}
+
+function getMethod(method) {
+  let name = '';
+  switch (method) {
+    case 'tarjan':
+      name = 'Lengauer Tarjan';
+      break;
+    case 'data_iteration':
+      name = 'Data Itreation';
+      break;
+    default:
+      name = 'Data Itreation';
+      break;
+  }
+  return name;
+}
+
+function createServer(snapshot, options) {
+  checkOptions(options);
   let parser = new V8Parser(snapshot);
-  parser.parse({ mode: 'search' });
+  process.stdout.write(logger.debugConsole(` <Using ${getMethod(options.method)}>\n`));
+  parser.parse(Object.assign({ mode: 'search' }, options), function (progress) {
+    let message = '';
+    if (progress.status === 'start') {
+      message = ` - ${progress.type}...`;
+    }
+    if (progress.status === 'end') {
+      message = `\x1b[3D\x1b[K ${logger.warnConsole(`${formatTime(progress.cost)}`)}\n`;
+    }
+    process.stdout.write(logger.debugConsole(`${message}`));
+  });
   let app = express();
   app.set('views', path.join(__dirname, './view'));
   app.engine('.html', require('ejs').renderFile);
@@ -55,6 +91,29 @@ function createServer(snapshot) {
     try {
       let statistics = parser.getStatistics();
       res.json({ ok: true, data: statistics });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
+  app.get('/dominates/:id', (req, res) => {
+    try {
+      let id = parseInt(req.params.id);
+      let current = !isNaN(req.query.current) && parseInt(req.query.current);
+      let limit = !isNaN(req.query.limit) && parseInt(req.query.limit);
+      let dominates = parser.getDominatorByIDom(id, current, limit);
+      res.json({ ok: true, data: dominates });
+    } catch (e) {
+      res.json({ ok: false, message: e.message });
+    }
+  });
+
+  app.get('/repeat/parend_id/:parend_id/child_id/:child_id', (req, res) => {
+    try {
+      let parendId = !isNaN(req.params.parend_id) && parseInt(req.params.parend_id);
+      let childId = !isNaN(req.params.child_id) && parseInt(req.params.child_id);
+      let repeat = parser.getChildRepeat(parendId, childId, req.query.type);
+      res.json({ ok: true, data: repeat });
     } catch (e) {
       res.json({ ok: false, message: e.message });
     }

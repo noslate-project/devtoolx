@@ -1,27 +1,27 @@
 'use strict';
 const logger = exports.logger = {
   infoConsole(str) {
-    return `\x1b[35m${str}\x1b[0m`;
+    return `\x1b[35;1m${str}\x1b[0m`;
   },
 
   infoConsole2(str) {
-    return `\x1b[32m${str}\x1b[0m`;
+    return `\x1b[32;1m${str}\x1b[0m`;
   },
 
   debugConsole(str) {
-    return `\x1b[36m${str}\x1b[0m`;
+    return `\x1b[36;1m${str}\x1b[0m`;
   },
 
   errorConsole(str) {
-    return `\x1b[31m${str}\x1b[0m`;
+    return `\x1b[31;1m${str}\x1b[0m`;
   },
 
   warnConsole(str) {
-    return `\x1b[33m${str}\x1b[0m`;
+    return `\x1b[33;1m${str}\x1b[0m`;
   },
 
   lineConsole(str) {
-    return `\x1b[4m${str}\x1b[0m`;
+    return `\x1b[4;1m${str}\x1b[0m`;
   }
 };
 

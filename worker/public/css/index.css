@@ -28,6 +28,10 @@
   color: rgb(48, 57, 66);
 }
 
+.string {
+  color: #4caf50;
+}
+
 .closure {
   font-style: italic;
 }
@@ -58,13 +62,33 @@
 }
 
 .statistics{
+  position: relative;
   font-family: Menlo;
   margin-left: 20px;
   margin-bottom: 0px;
   margin-top: 23px;
   font-size: 15px;
+  z-index:999;
 }
 
 .statistics-value{
   color: #d20d0d;
+}
+
+.tooltip-menu {
+  font-size: 10px;
+  margin: 5px 10px 5px 10px;
+}
+
+.customize-start {
+  height:21px;
+  outline:none;
+  font-family: Menlo;
+  padding: 3px 8px;
+  margin-right: 15px;
+  margin-left: 10px;
+  width: 100px;
+  border-radius: 3px;
+  border: 1px solid #9a70e4;
+  color: #673ab7;
 }

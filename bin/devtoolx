@@ -39,15 +39,21 @@ switch (argv[0]) {
       isNaN(argv[3]) && console.log(util.logger.warnConsole(`Warn: port is not a number, using default port 3000`));
       !isNaN(argv[3]) && (port = argv[3]);
     }
+    let method = argv.reduce((pre, arg) => {
+      if (~arg.indexOf('--method=')) {
+        pre = arg.split('=')[1];
+      }
+      return pre;
+    }, '');
     let start = Date.now();
-    let startText = `Start analysis ${path.basename(file)} (${util.formatSize(stat.size)}), waiting`;
-    process.stdout.write(util.logger.infoConsole2(`${startText}...\n\n`));
-    require('..').snapshot(file).listen(port, () => {
-      process.stdout.write(util.logger.infoConsole2(`Analysis completed, cost `
+    let startText = `File ${path.basename(file)} (${util.formatSize(stat.size)}), waiting`;
+    process.stdout.write(util.logger.infoConsole2(`${startText}...\n`));
+    require('..').snapshot(file, { method }).listen(port, () => {
+      process.stdout.write(util.logger.infoConsole2(`\nCompleted, cost `
         + `${util.logger.warnConsole(`${util.formatTime(Date.now() - start)}`)}`
         + `${util.logger.infoConsole2(`, open `)}`
         + `${util.logger.infoConsole(util.logger.lineConsole(`http://localhost:${port}`))} ` +
-        `${util.logger.infoConsole2(`for more details`)}\n`));
+        `${util.logger.infoConsole2(`for more details.`)}\n`));
       if (argv.every(arg => arg !== '--no-open')) {
         exec(`"open" http://localhost:${port}`);
       }
