@@ -15,14 +15,6 @@
 npm install devtoolx -g
 ```
 
-## <span style="font-family:Menlo;">Compatibility</span>
-
-* <span style="font-family:Menlo;">Node.js v4.x</span>
-* <span style="font-family:Menlo;">Node.js v6.x</span>
-* <span style="font-family:Menlo;">Node.js v8.x</span>
-
-<span style="font-family:Menlo;">Attention: local compilation needs gcc version >= v4.9.2</span>
-
 ## <span style="font-family:Menlo;">Usage</span>
 
 ### <span style="font-family:Menlo;">Search node by address or ordinal id</span>
@@ -51,4 +43,4 @@ devtoolx --help
 
 [<span style="font-family:Menlo;">MIT License</span>](LICENSE)
 
-<span style="font-family:Menlo;">Copyright (c) 2018 hyj1991</span>
+<span style="font-family:Menlo;">Copyright (c) 2023 noslate project</span>
