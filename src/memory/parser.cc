@@ -96,6 +96,12 @@ namespace parser
     Print(info[1], "json parse", "start", 0);
     int64_t jsonparse_start = uv_hrtime();
     std::ifstream jsonfile(parser->filename_);
+    if (!jsonfile.is_open()) {
+      std::cout << "\nfailed to open " << parser->filename_ << '\n';
+      std::cerr << "ParseError: " << strerror(errno);
+      std::exit(1);
+      return;
+    }
     json profile;
     jsonfile >> profile;
     jsonfile.close();
